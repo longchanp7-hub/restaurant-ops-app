@@ -1,77 +1,83 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const HomeState = require('../home-state.js');
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
-function boot({ saved = null, blocked = false, invalid = false } = {}) {
-  const elements = new Map();
-  const storage = new Map(saved ? [['restaurantOpsHome.v2', JSON.stringify(saved)]] : []);
-  if (invalid) storage.set('restaurantOpsHome.v2', '{broken');
-  const element = () => ({
-    hidden: false, textContent: '', dataset: {}, children: [], listeners: {},
-    style: { setProperty() {} }, classList: { toggle() {}, add() {}, remove() {} },
-    set innerHTML(value) { this.children = []; },
-    appendChild(child) { this.children.push(child); },
-    addEventListener(name, fn) { this.listeners[name] = fn; },
-    querySelector() { return element(); }
-  });
-  const document = {
-    body: element(), createElement: element,
-    getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); }
-  };
-  const context = vm.createContext({
-    document, setTimeout() { return 1; }, clearTimeout() {},
-    localStorage: {
-      getItem(key) { return storage.get(key) ?? null; },
-      setItem(key, value) { if (blocked) throw new Error('QuotaExceededError'); storage.set(key, value); }
+const IDS = ['sales','shift','stock','accounting','staff','tasks','reports','ai','alerts'];
+
+function memoryStorage(seed = {}, blocked = false) {
+  const map = new Map(Object.entries(seed));
+  return {
+    map,
+    getItem(key) { return map.get(key) ?? null; },
+    setItem(key, value) {
+      if (blocked) throw new Error('QuotaExceededError');
+      map.set(key, value);
     }
-  });
-  vm.runInContext(source, context);
-  return { run: code => vm.runInContext(code, context), elements, storage };
+  };
 }
 
-test('duplicate and unknown saved module IDs are removed', () => {
-  const app = boot({ saved: { order: ['sales', 'sales', 'unknown'], hidden: ['sales', 'sales', 'unknown'] } });
-  assert.equal(app.run('state.order.length'), 9);
-  assert.equal(app.run('new Set(state.order).size'), 9);
-  assert.equal(app.run('JSON.stringify(state.hidden)'), '["sales"]');
-  assert.equal(app.elements.get('tileGrid').children.length, 8);
+test('normalize removes duplicate and unknown IDs while restoring missing known IDs', () => {
+  const state = HomeState.normalize({
+    order: ['sales','sales','unknown','stock'],
+    hidden: ['sales','sales','unknown']
+  }, IDS);
+  assert.deepEqual(state.hidden, ['sales']);
+  assert.equal(state.order.length, IDS.length);
+  assert.equal(new Set(state.order).size, IDS.length);
+  assert.deepEqual(state.order.slice(0, 2), ['sales','stock']);
+  assert.deepEqual(new Set(state.order), new Set(IDS));
 });
 
-test('broken stored JSON falls back to all nine modules', () => {
-  const app = boot({ invalid: true });
-  assert.equal(app.elements.get('tileGrid').children.length, 9);
+test('load falls back to all modules when v2 JSON is broken', () => {
+  const storage = memoryStorage({'restaurantOpsHome.v2':'{broken'});
+  assert.deepEqual(HomeState.load(storage, IDS), {order: IDS, hidden: []});
 });
 
-test('hiding and restoring survives a page reload', () => {
-  const app = boot();
-  app.run("hideModule('sales')");
-  assert.equal(app.elements.get('tileGrid').children.length, 8);
-  const reloaded = boot({ saved: JSON.parse(app.storage.get('restaurantOpsHome.v2')) });
-  assert.equal(reloaded.elements.get('tileGrid').children.length, 8);
-  reloaded.run("restoreModule('sales')");
-  assert.equal(reloaded.elements.get('tileGrid').children.length, 9);
+test('load falls back to legacy v1 when v2 is missing or invalid', () => {
+  const legacy = {order:['shift','sales'], hidden:['alerts']};
+  const storage = memoryStorage({
+    'restaurantOpsHome.v2':'{"order":"bad","hidden":[]}',
+    'restaurantOpsHome.v1':JSON.stringify(legacy)
+  });
+  const state = HomeState.load(storage, IDS);
+  assert.equal(state.order[0], 'shift');
+  assert.equal(state.order[1], 'sales');
+  assert.deepEqual(state.hidden, ['alerts']);
 });
 
-test('denied storage does not stop hide, restore, reorder or reset', () => {
-  const app = boot({ blocked: true });
-  app.run("hideModule('sales')");
-  assert.equal(app.elements.get('tileGrid').children.length, 8);
-  assert.match(app.elements.get('toast').textContent, /保存できない/);
-  app.run("restoreModule('sales'); reorder('sales', 'stock')");
-  assert.equal(app.elements.get('tileGrid').children.length, 9);
-  assert.equal(app.run('state.order[2]'), 'sales');
-  app.elements.get('resetBtn').listeners.click();
-  assert.equal(app.run('state.order[0]'), 'sales');
-  assert.match(app.elements.get('toast').textContent, /保存できない/);
+test('v2 takes precedence over v1 when both are valid', () => {
+  const storage = memoryStorage({
+    'restaurantOpsHome.v2':JSON.stringify({order:['ai'],hidden:['stock']}),
+    'restaurantOpsHome.v1':JSON.stringify({order:['sales'],hidden:['alerts']})
+  });
+  const state = HomeState.load(storage, IDS);
+  assert.equal(state.order[0], 'ai');
+  assert.deepEqual(state.hidden, ['stock']);
 });
 
-test('touch move defers storage until completion', () => {
-  const app = boot();
-  app.run("reorder('sales', 'stock', false)");
-  assert.equal(app.storage.size, 0);
-  assert.equal(app.run('save()'), true);
-  assert.equal(JSON.parse(app.storage.get('restaurantOpsHome.v2')).order[2], 'sales');
+test('save returns false instead of throwing when storage rejects writes', () => {
+  const storage = memoryStorage({}, true);
+  assert.equal(HomeState.save(storage, {order: IDS, hidden: []}), false);
+});
+
+test('save writes state to the v2 key when storage is available', () => {
+  const storage = memoryStorage();
+  const state = {order:[...IDS], hidden:['alerts']};
+  assert.equal(HomeState.save(storage, state), true);
+  assert.deepEqual(JSON.parse(storage.map.get('restaurantOpsHome.v2')), state);
+});
+
+test('move reorders a module and preserves hidden state', () => {
+  const original = {order:[...IDS], hidden:['alerts']};
+  const moved = HomeState.move(original, 'sales', 'stock');
+  assert.equal(moved.order[2], 'sales');
+  assert.deepEqual(moved.hidden, ['alerts']);
+  assert.notStrictEqual(moved.order, original.order);
+  assert.notStrictEqual(moved.hidden, original.hidden);
+});
+
+test('move is a no-op for unknown IDs or identical source/target', () => {
+  const state = {order:[...IDS], hidden:[]};
+  assert.strictEqual(HomeState.move(state, 'missing', 'stock'), state);
+  assert.strictEqual(HomeState.move(state, 'sales', 'sales'), state);
 });
