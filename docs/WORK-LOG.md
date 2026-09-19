@@ -2,6 +2,16 @@
 
 記録時刻：2026-09-20 02:49 JST。最初に `docs/NEXT-AI-RUNBOOK.md` と併せて読むこと。
 
+
+## 2026-09-20 継続作業アップデート
+
+- Google Driveを実検索したが、restaurant-ops-app の作業書はDrive上に見つからなかった。過去の記録どおり、Driveアップロードは認証スコープ不足で完了していない。今回の再開はこのGitHubブランチ上の原本 `docs/WORK-LOG.md` / `docs/NEXT-AI-RUNBOOK.md` を使用した。
+- 旧 `tests/home-state.test.cjs` を新しい `home-state.js` 直接テストへ更新。ローカルNode 22で **8件すべて成功**。
+- 欠けていた `icon-candidates.html` を追加し、A〜Hの8案を実SVGとして `icons/` に追加。ホーム／設定からのリンク切れを解消した。
+- `manifest.webmanifest` の背景色・テーマ色を新UI（白・深緑・くすみ色）に合わせた。現在の `app-icon.svg` は候補選定前なので変更していない。
+- `.github/workflows/ui-checks.yml` を追加。構文チェック、状態テスト、静的必須ファイルの存在確認をpush/PRで実行する。作成直後の確認時点ではWorkflow Runはまだ取得できていないため、CI成功とは未報告。
+- 実ブラウザでの見た目・Pointer Events操作・モーダル操作はまだ未検証。したがってmainには未マージ。
+
 ## 最重要：完成部分と途中部分
 
 | 対象 | 状態 |
