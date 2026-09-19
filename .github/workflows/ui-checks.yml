@@ -1,0 +1,36 @@
+name: UI checks
+
+on:
+  push:
+    branches:
+      - main
+      - work/ui-refresh-handoff-20260920
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check icons.js
+          node --check home-state.js
+      - name: State tests
+        run: node --test tests/home-state.test.cjs
+      - name: Required static files
+        run: |
+          test -f index.html
+          test -f styles.css
+          test -f icon-candidates.html
+          test -f manifest.webmanifest
+          for f in icons/candidate-{a-grid,b-noren,c-plate-grid,d-r,e-check-store,f-cards,g-compass,h-nine-dots}.svg; do test -f "$f"; done
