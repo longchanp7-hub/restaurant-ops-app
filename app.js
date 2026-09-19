@@ -10,9 +10,11 @@ const MODULES = [
   {id:'alerts', title:'通知・アラート', desc:'異常の検知・お知らせ\n重要な情報をすぐに', icon:'🔔', bg:'linear-gradient(145deg,#ffe2e8,#fff1f4)'}
 ];
 
-const STORAGE_KEY = 'restaurantOpsHome.v1';
+const STORAGE_KEY = 'restaurantOpsHome.v2';
 let editing = false;
 let dragId = null;
+let pointerDrag = null;
+let longPressTimer = null;
 let state = loadState();
 
 const grid = document.getElementById('tileGrid');
@@ -29,14 +31,24 @@ const toast = document.getElementById('toast');
 
 function loadState(){
   try{
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if(saved?.order && Array.isArray(saved.order) && saved?.hidden && Array.isArray(saved.hidden)) return saved;
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || JSON.parse(localStorage.getItem('restaurantOpsHome.v1'));
+    if(saved?.order && Array.isArray(saved.order) && saved?.hidden && Array.isArray(saved.hidden)){
+      const valid = new Set(MODULES.map(m=>m.id));
+      const order = saved.order.filter(id=>valid.has(id));
+      MODULES.forEach(m=>{ if(!order.includes(m.id)) order.push(m.id); });
+      return {order, hidden:saved.hidden.filter(id=>valid.has(id))};
+    }
   }catch(e){}
   return {order: MODULES.map(m=>m.id), hidden: []};
 }
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 function byId(id){ return MODULES.find(m=>m.id===id); }
 function visibleIds(){ return state.order.filter(id=>!state.hidden.includes(id)); }
+function setEditing(value){
+  editing = value;
+  if(!editing) cancelPointerDrag();
+  render();
+}
 
 function render(){
   document.body.classList.toggle('editing', editing);
@@ -45,28 +57,126 @@ function render(){
   addCard.hidden = !editing;
   resetBtn.hidden = !editing;
   introCard.hidden = !editing;
-  modeText.textContent = editing ? '長押し感覚で並べ替え・不要な機能は非表示' : 'よく使う機能';
+  modeText.textContent = editing ? '長押し・ドラッグで並べ替え / −で非表示' : 'よく使う機能';
 
   grid.innerHTML='';
   visibleIds().forEach(id=>{
     const m = byId(id);
     const btn = document.createElement('button');
-    btn.className='tile'; btn.draggable = editing; btn.dataset.id=id; btn.style.setProperty('--tile-bg',m.bg);
-    btn.innerHTML = `<span class="remove" aria-label="非表示">−</span><span class="drag">≡</span><div class="icon">${m.icon}</div><h3>${m.title}</h3><p>${m.desc.replace(/\n/g,'<br>')}</p>`;
+    btn.type = 'button';
+    btn.className='tile';
+    btn.draggable = editing;
+    btn.dataset.id=id;
+    btn.style.setProperty('--tile-bg',m.bg);
+    btn.innerHTML = `<span class="remove" aria-label="非表示">−</span><span class="drag" aria-hidden="true">≡</span><div class="icon">${m.icon}</div><h3>${m.title}</h3><p>${m.desc.replace(/\n/g,'<br>')}</p>`;
+
     btn.addEventListener('click',(e)=>{
+      if(btn.dataset.suppressClick==='1'){
+        btn.dataset.suppressClick='0';
+        return;
+      }
       if(editing){
         if(e.target.closest('.remove')) hideModule(id);
         return;
       }
       showToast(`${m.title}：詳細画面は後から設計します`);
     });
-    btn.addEventListener('dragstart',()=>{ dragId=id; btn.classList.add('dragging'); });
+
+    btn.addEventListener('dragstart',(e)=>{
+      if(!editing){ e.preventDefault(); return; }
+      dragId=id;
+      btn.classList.add('dragging');
+      if(e.dataTransfer) e.dataTransfer.effectAllowed='move';
+    });
     btn.addEventListener('dragend',()=>{ dragId=null; btn.classList.remove('dragging'); });
-    btn.addEventListener('dragover',(e)=>e.preventDefault());
+    btn.addEventListener('dragover',(e)=>{ if(editing) e.preventDefault(); });
     btn.addEventListener('drop',(e)=>{ e.preventDefault(); if(dragId && dragId!==id) reorder(dragId,id); });
+
+    btn.addEventListener('pointerdown',(e)=>handlePointerDown(e, btn, id));
     grid.appendChild(btn);
   });
   renderHidden();
+}
+
+function handlePointerDown(e, tile, id){
+  if(e.target.closest('.remove')) return;
+
+  if(!editing){
+    clearTimeout(longPressTimer);
+    const sx=e.clientX, sy=e.clientY;
+    longPressTimer=setTimeout(()=>{
+      setEditing(true);
+      showToast('編集モードにしました');
+    },520);
+    const cancel=()=>{
+      clearTimeout(longPressTimer);
+      window.removeEventListener('pointerup',cancel);
+      window.removeEventListener('pointercancel',cancel);
+      window.removeEventListener('pointermove',moveCancel);
+    };
+    const moveCancel=(ev)=>{
+      if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>12) cancel();
+    };
+    window.addEventListener('pointerup',cancel,{once:true});
+    window.addEventListener('pointercancel',cancel,{once:true});
+    window.addEventListener('pointermove',moveCancel);
+    return;
+  }
+
+  if(e.pointerType==='mouse') return;
+  e.preventDefault();
+  tile.setPointerCapture?.(e.pointerId);
+  startPointerDrag(tile,id,e);
+}
+
+function startPointerDrag(tile,id,e){
+  cancelPointerDrag();
+  const rect=tile.getBoundingClientRect();
+  pointerDrag={id,tile,pointerId:e.pointerId,offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top};
+  tile.classList.add('pointer-dragging');
+  tile.dataset.suppressClick='1';
+  updateFloatingTile(e.clientX,e.clientY);
+
+  tile.addEventListener('pointermove',onPointerMove);
+  tile.addEventListener('pointerup',onPointerUp,{once:true});
+  tile.addEventListener('pointercancel',onPointerUp,{once:true});
+}
+
+function onPointerMove(e){
+  if(!pointerDrag || e.pointerId!==pointerDrag.pointerId) return;
+  e.preventDefault();
+  updateFloatingTile(e.clientX,e.clientY);
+  const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.tile');
+  if(target && target.dataset.id && target.dataset.id!==pointerDrag.id){
+    reorder(pointerDrag.id,target.dataset.id,false);
+    pointerDrag.id=target.dataset.id===pointerDrag.id ? pointerDrag.id : pointerDrag.tile.dataset.id;
+  }
+}
+
+function updateFloatingTile(x,y){
+  if(!pointerDrag) return;
+  const {tile,offsetX,offsetY}=pointerDrag;
+  tile.style.left=`${x-offsetX}px`;
+  tile.style.top=`${y-offsetY}px`;
+}
+
+function onPointerUp(e){
+  if(!pointerDrag || e.pointerId!==pointerDrag.pointerId) return;
+  const {tile}=pointerDrag;
+  tile.releasePointerCapture?.(e.pointerId);
+  cancelPointerDrag();
+  save();
+  render();
+}
+
+function cancelPointerDrag(){
+  if(!pointerDrag) return;
+  const {tile}=pointerDrag;
+  tile.classList.remove('pointer-dragging');
+  tile.style.left='';
+  tile.style.top='';
+  tile.removeEventListener('pointermove',onPointerMove);
+  pointerDrag=null;
 }
 
 function hideModule(id){
@@ -78,7 +188,7 @@ function restoreModule(id){
   if(!state.order.includes(id)) state.order.push(id);
   save(); render(); showToast('ホームに追加しました');
 }
-function reorder(fromId,toId){
+function reorder(fromId,toId,rerender=true){
   const visible = visibleIds();
   const from=visible.indexOf(fromId), to=visible.indexOf(toId);
   if(from<0||to<0) return;
@@ -86,14 +196,17 @@ function reorder(fromId,toId){
   const hiddenSet = new Set(state.hidden);
   const hiddenInOrder = state.order.filter(id=>hiddenSet.has(id));
   state.order = [...visible, ...hiddenInOrder.filter(id=>!visible.includes(id))];
-  save(); render();
+  save();
+  if(rerender) render();
 }
 function renderHidden(){
   const ids = state.hidden;
   hiddenList.innerHTML = ids.length ? '' : '<p style="color:#7b8797;font-size:13px">現在、非表示の機能はありません。</p>';
   ids.forEach(id=>{
-    const m=byId(id); const row=document.createElement('div'); row.className='hidden-item';
-    row.innerHTML=`<div class="mini-icon" style="--mini-bg:${m.bg}">${m.icon}</div><div class="copy"><strong>${m.title}</strong><span>${m.desc.replace(/\n/g,' / ')}</span></div><button>追加</button>`;
+    const m=byId(id);
+    const row=document.createElement('div');
+    row.className='hidden-item';
+    row.innerHTML=`<div class="mini-icon" style="--mini-bg:${m.bg}">${m.icon}</div><div class="copy"><strong>${m.title}</strong><span>${m.desc.replace(/\n/g,' / ')}</span></div><button type="button">追加</button>`;
     row.querySelector('button').addEventListener('click',()=>restoreModule(id));
     hiddenList.appendChild(row);
   });
@@ -102,7 +215,7 @@ function openSheet(){ bottomSheet.hidden=false; sheetBackdrop.hidden=false; docu
 function closeSheetFn(){ bottomSheet.hidden=true; sheetBackdrop.hidden=true; document.body.style.overflow=''; }
 function showToast(msg){ toast.textContent=msg; toast.hidden=false; clearTimeout(showToast.t); showToast.t=setTimeout(()=>toast.hidden=true,1700); }
 
-editBtn.addEventListener('click',()=>{ editing=!editing; render(); });
+editBtn.addEventListener('click',()=>setEditing(!editing));
 addCard.addEventListener('click',openSheet);
 closeSheet.addEventListener('click',closeSheetFn);
 sheetBackdrop.addEventListener('click',closeSheetFn);
