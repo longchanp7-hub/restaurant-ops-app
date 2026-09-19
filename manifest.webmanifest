@@ -1,0 +1,17 @@
+{
+  "name": "飲食店運営アプリ",
+  "short_name": "店舗運営",
+  "description": "飲食店の経営・現場管理をまとめるホームUIプロトタイプ",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7fb",
+  "theme_color": "#f7f8fc",
+  "icons": [
+    {
+      "src": "app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
