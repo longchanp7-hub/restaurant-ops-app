@@ -34,14 +34,24 @@ function loadState(){
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || JSON.parse(localStorage.getItem('restaurantOpsHome.v1'));
     if(saved?.order && Array.isArray(saved.order) && saved?.hidden && Array.isArray(saved.hidden)){
       const valid = new Set(MODULES.map(m=>m.id));
-      const order = saved.order.filter(id=>valid.has(id));
+      const order = [...new Set(saved.order.filter(id=>valid.has(id)))];
       MODULES.forEach(m=>{ if(!order.includes(m.id)) order.push(m.id); });
-      return {order, hidden:saved.hidden.filter(id=>valid.has(id))};
+      return {order, hidden:[...new Set(saved.hidden.filter(id=>valid.has(id)))]};
     }
   }catch(e){}
   return {order: MODULES.map(m=>m.id), hidden: []};
 }
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+function notifySaved(saved, message){
+  showToast(saved ? message : '変更はこの画面で有効です。端末に保存できないため、再読み込みで元に戻ります。');
+}
 function byId(id){ return MODULES.find(m=>m.id===id); }
 function visibleIds(){ return state.order.filter(id=>!state.hidden.includes(id)); }
 function setEditing(value){
@@ -165,8 +175,9 @@ function onPointerUp(e){
   const {tile}=pointerDrag;
   tile.releasePointerCapture?.(e.pointerId);
   cancelPointerDrag();
-  save();
+  const saved = save();
   render();
+  if(!saved) notifySaved(false);
 }
 
 function cancelPointerDrag(){
@@ -181,12 +192,12 @@ function cancelPointerDrag(){
 
 function hideModule(id){
   if(!state.hidden.includes(id)) state.hidden.push(id);
-  save(); render(); showToast('ホームから非表示にしました');
+  const saved = save(); render(); notifySaved(saved, 'ホームから非表示にしました');
 }
 function restoreModule(id){
   state.hidden = state.hidden.filter(x=>x!==id);
   if(!state.order.includes(id)) state.order.push(id);
-  save(); render(); showToast('ホームに追加しました');
+  const saved = save(); render(); notifySaved(saved, 'ホームに追加しました');
 }
 function reorder(fromId,toId,rerender=true){
   const visible = visibleIds();
@@ -196,8 +207,11 @@ function reorder(fromId,toId,rerender=true){
   const hiddenSet = new Set(state.hidden);
   const hiddenInOrder = state.order.filter(id=>hiddenSet.has(id));
   state.order = [...visible, ...hiddenInOrder.filter(id=>!visible.includes(id))];
-  save();
-  if(rerender) render();
+  if(rerender){
+    const saved = save();
+    render();
+    if(!saved) notifySaved(false);
+  }
 }
 function renderHidden(){
   const ids = state.hidden;
@@ -219,7 +233,7 @@ editBtn.addEventListener('click',()=>setEditing(!editing));
 addCard.addEventListener('click',openSheet);
 closeSheet.addEventListener('click',closeSheetFn);
 sheetBackdrop.addEventListener('click',closeSheetFn);
-resetBtn.addEventListener('click',()=>{ state={order:MODULES.map(m=>m.id),hidden:[]}; save(); render(); showToast('初期状態に戻しました'); });
+resetBtn.addEventListener('click',()=>{ state={order:MODULES.map(m=>m.id),hidden:[]}; const saved=save(); render(); notifySaved(saved, '初期状態に戻しました'); });
 document.getElementById('alertsBtn').addEventListener('click',()=>showToast('通知画面は後から設計します'));
 
 render();
