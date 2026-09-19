@@ -57,3 +57,21 @@ h1{font-size:27px;line-height:1.2;margin:0;letter-spacing:-.02em}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:#172033;color:white;padding:10px 14px;border-radius:12px;font-size:12px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.2)}
 @media(max-width:359px){.tile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tile{min-height:148px}}
 @media(min-width:521px){body{padding:20px 0}.app-shell{min-height:calc(100vh - 40px);border-radius:28px;box-shadow:0 18px 70px rgba(17,24,39,.12);overflow:hidden}.bottom-nav{bottom:20px;border-radius:0 0 28px 28px}}
+
+/* Mobile home-screen interaction */
+.tile{touch-action:pan-y;-webkit-user-select:none;user-select:none}
+.editing .tile{touch-action:none}
+.tile.pointer-dragging{
+  position:fixed;
+  z-index:50;
+  width:calc((min(520px,100vw) - 52px)/3);
+  min-height:156px;
+  opacity:.94;
+  transform:scale(1.04) rotate(1deg);
+  box-shadow:0 20px 42px rgba(17,24,39,.22);
+  pointer-events:none;
+  animation:none;
+}
+@media(max-width:359px){
+  .tile.pointer-dragging{width:calc((100vw - 42px)/2)}
+}
