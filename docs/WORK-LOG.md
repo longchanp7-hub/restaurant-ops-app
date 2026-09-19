@@ -12,6 +12,14 @@
 - `.github/workflows/ui-checks.yml` を追加。構文チェック、状態テスト、静的必須ファイルの存在確認をpush/PRで実行する。作成直後の確認時点ではWorkflow Runはまだ取得できていないため、CI成功とは未報告。
 - 実ブラウザでの見た目・Pointer Events操作・モーダル操作はまだ未検証。したがってmainには未マージ。
 
+
+### CI・実表示確認の追記
+
+- Draft PR #1 を作成: https://github.com/longchanp7-hub/restaurant-ops-app/pull/1
+- GitHub Actions `UI checks` run #4（ID 35461189786）は **completed / success**。構文チェック、8件の状態テスト、必須静的ファイル確認が通過した。
+- 実ブラウザ確認をローカルHTTP・file URL・代替HTTPS経路で試したが、この実行環境ではすべて `net::ERR_BLOCKED_BY_ADMINISTRATOR` でナビゲーション自体が拒否された。表示・タッチ操作・モーダル操作は未検証のまま。
+- 上記理由によりPRはDraftのまま、mainには未マージ。ブラウザ確認ができる環境での検証後にReady化・main反映を判断する。
+
 ## 最重要：完成部分と途中部分
 
 | 対象 | 状態 |
