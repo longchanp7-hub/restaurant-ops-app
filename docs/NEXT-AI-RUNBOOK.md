@@ -11,6 +11,14 @@
 - GitHub Actionsの `UI checks` を追加済み。ただし作成直後の時点では実Run未確認。
 - 次の最優先は**実ブラウザでの表示・操作確認**。これが済むまでmainへマージしない。
 
+
+### 追加確認結果
+
+- Draft PR #1: https://github.com/longchanp7-hub/restaurant-ops-app/pull/1
+- GitHub Actions `UI checks` run #4 は completed / success。
+- この実行環境のブラウザはローカルHTTP・file URL等への遷移が `ERR_BLOCKED_BY_ADMINISTRATOR` で拒否され、実表示テストは継続不能だった。次のブラウザ確認可能な環境で、390px前後を最優先に実画面とPointer Eventsを検証する。
+- 実表示確認前なのでPRはDraftのまま。mainへはまだマージしない。
+
 ## 0. 最初の5分で行うこと
 
 1. このブランチ `work/ui-refresh-handoff-20260920` の `docs/WORK-LOG.md` を読む。
