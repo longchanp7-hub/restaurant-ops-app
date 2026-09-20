@@ -1,24 +1,27 @@
 # Deployment
 
-## Vercel
+## GitHub Pages
 
 このリポジトリはビルド不要の静的サイトです。
+公開先は **GitHub Pages** を使用します。Vercelは不要です。
 
-推奨設定:
+### 構成
 
-- Project name: `restaurant-ops-app`
-- Framework Preset: Other / Static
-- Root Directory: `./`
-- Build Command: 空欄
-- Output Directory: 空欄
-- Install Command: 空欄
+- Repository: `longchanp7-hub/restaurant-ops-app`
 - Production branch: `main`
+- Pages source: **GitHub Actions**
+- Workflow: `.github/workflows/deploy-pages.yml`
+- 公開URL: `https://longchanp7-hub.github.io/restaurant-ops-app/`
 
-`index.html` がルートにあるため、そのままProduction Deployできます。
+### 自動更新
 
-Git Integrationを有効にし、`main` へのpushでProductionを自動再デプロイする構成にします。
+`main` へのpushをトリガーに `Deploy GitHub Pages` workflow が実行され、
+リポジトリ直下の静的ファイルをPagesへ公開します。
 
-## 公開方針
+そのため今後は、完成・確認済みの変更をmainへ反映すれば自動で公開更新されます。
 
-GitHubリポジトリはPrivateのままで構いません。
-VercelのProduction URLは公開URLとして利用します。
+### 注意
+
+- 作業途中のブランチは直接Productionへ出さない。
+- UI・テストが確認できた変更だけをmainへ反映する。
+- GitHub Pages以外のホスティングへ変更する場合は、別途方針を決める。
