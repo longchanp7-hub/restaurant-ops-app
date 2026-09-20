@@ -109,30 +109,22 @@ python3 -m http.server 8765 --bind 127.0.0.1
 4. 更新後のref/commitを確認し、最終報告には実際のコミットリンクを付ける。
 5. この作業記録を現況に更新する。過去の「成功」と現在の「失敗」を混同しない。
 
-## 6. Vercel公開（認証が整った時だけ）
+## 6. GitHub Pages公開
 
-ユーザーの指定：Vercel新規ProjectとしてImport、Production公開、GitHub pushで自動再デプロイ。
+公開先はGitHub Pages。Vercelは不要。
 
 | 設定 | 値 |
 |---|---|
 | Repository | `longchanp7-hub/restaurant-ops-app` |
-| Project name | `restaurant-ops-app` |
-| Framework | Other（ビルド不要の静的サイト） |
-| Root Directory | リポジトリのルート |
-| Build Command | 空欄／不要 |
-| Output Directory | 空欄／ルートを配信する既定設定 |
-| Install Command | 空欄／不要 |
+| Pages source | GitHub Actions |
+| Workflow | `.github/workflows/deploy-pages.yml` |
 | Production Branch | `main` |
-| 公開範囲 | Production URLは一般公開。GitHubはPrivateのままでよい |
+| Production URL | `https://longchanp7-hub.github.io/restaurant-ops-app/` |
 
-- 最初にVercel接続先を確認。前回のアプリ応答はチーム0件、ブラウザは未ログイン。
-- チーム0件だけを根拠にアカウント自体が存在しないと断言しない。
-- 認証画面の選択・秘密情報入力にはセキュアな認証機能を使う。チャットにパスワードを求めない。
-- ログイン方法を勝手に切り替えない。過去にChatGPT経由、別スレッドではGitHub/Googleを検討した履歴があり、最終確定は未確認。
-- 対象未指定の `deploy_to_vercel({})` は以前自動承認レビューに拒否されている。同じ呼び出しは繰り返さない。
-- 正しいリポジトリを明示してImportし、Git連携でmainをProductionにする。ローカルの一回限りのアップロードだけで「自動再デプロイ有効」と報告しない。
-- Ready、Production割当、GitHub連携、Production branch、ログイン不要のURL表示をそれぞれ確認する。
-- デプロイのための空コミットや不要なコード改変は行わない。
+- 完成・確認済み変更だけをmainへ反映する。
+- mainへのpushでPages workflowが自動実行される。
+- 公開確認ではActions成功とProduction URLの表示を区別して確認する。
+- 空コミットやVercel用設定は不要。
 
 ## 7. 最終報告
 
@@ -142,4 +134,4 @@ python3 -m http.server 8765 --bind 127.0.0.1
 
 ## 次のAIに渡す短い依頼文
 
-> `longchanp7-hub/restaurant-ops-app` の `work/ui-refresh-handoff-20260920` を取得し、`docs/WORK-LOG.md` と `docs/NEXT-AI-RUNBOOK.md` を読んで続行してください。mainは保存不具合修正まで完了しテスト5件成功、新UIブランチは草稿で旧テスト5件失敗です。新UIのテスト・操作確認、アプリアイコン8案と比較ページを完成させ、完成分だけmainへ反映してください。Vercel公開も希望していますが認証未完了です。既存変更を保持し、完了／未完了を区別してください。
+> `longchanp7-hub/restaurant-ops-app` の `work/ui-refresh-handoff-20260920` を取得し、`docs/WORK-LOG.md` と `docs/NEXT-AI-RUNBOOK.md` を読んで続行してください。mainは保存不具合修正まで完了しテスト5件成功、新UIブランチは草稿で旧テスト5件失敗です。新UIのテスト・操作確認、アプリアイコン8案と比較ページを完成させ、完成分だけmainへ反映してください。公開はGitHub Pagesへ変更済みです。既存変更を保持し、完了／未完了を区別してください。
