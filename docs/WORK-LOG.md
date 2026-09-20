@@ -84,14 +84,13 @@
 - 旧テストは `app.js` だけをVMで実行しているため新しい `HomeState` / `icon` / window等に未対応。
 - 新UIの5件失敗はmainの5件成功とは別の結果。混同しない。
 
-## Vercelで実際に確認したこと
+## 公開方式の更新
 
-- Vercelアプリの `list_teams` は2026-09-20 02:40頃にも `teams: []`。
-- クラウドブラウザの `/new` には Login / Sign Up が表示され、未ログインだった。
-- ローカル環境ではVercel CLIと `VERCEL_TOKEN` の存在は以前確認できなかった。
-- 対象指定なしの `deploy_to_vercel({})` は過去に自動承認レビューで拒否された。理由：別のローカル内容を誤公開する危険。**同じ空引数呼び出しを再試行しない。**
-- Vercelアカウント作成が完了しているとは確認できない。接続済みアプリ表示だけで、Import可能とみなさない。
-- 認証には安全な入力機能または明示的なブラウザ引継ぎを使う。パスワードをチャットに貼らせない。
+- 公開方式はVercelではなく **GitHub Pages** に変更済み。
+- リポジトリはPublic。
+- mainに `.github/workflows/deploy-pages.yml` が追加され、GitHub Actions経由でPagesを自動更新する構成。
+- 公開URLは `https://longchanp7-hub.github.io/restaurant-ops-app/`。
+- 今後は完成分をmainへ反映するとPagesの更新が走る。Vercel認証・Project作成は不要。
 
 ## 作業環境
 
