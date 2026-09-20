@@ -1,239 +1,60 @@
-const MODULES = [
-  {id:'sales', title:'売上・経営分析', desc:'日次・月次の売上\n利益率・客単価など', icon:'▥', bg:'linear-gradient(145deg,#dff7df,#eefbed)'},
-  {id:'shift', title:'シフト・勤怠管理', desc:'シフト作成\n勤怠打刻・集計など', icon:'👥', bg:'linear-gradient(145deg,#ffe7d1,#fff1e4)'},
-  {id:'stock', title:'発注・在庫管理', desc:'発注・仕入れ\n在庫数の把握など', icon:'📦', bg:'linear-gradient(145deg,#d9efff,#eaf6ff)'},
-  {id:'accounting', title:'会計・経費管理', desc:'経費の記録\n支払い管理など', icon:'¥', bg:'linear-gradient(145deg,#eee2ff,#f7f0ff)'},
-  {id:'staff', title:'スタッフ管理', desc:'スタッフ情報\n評価・育成など', icon:'👨‍👩‍👧', bg:'linear-gradient(145deg,#ffdfe7,#fff0f4)'},
-  {id:'tasks', title:'タスク・業務管理', desc:'やることリスト\n業務の進捗管理など', icon:'✓', bg:'linear-gradient(145deg,#fff0bf,#fff8dc)'},
-  {id:'reports', title:'レポート・分析', desc:'自動レポート生成\n店舗ごとの比較など', icon:'▤', bg:'linear-gradient(145deg,#e5e8ec,#f5f6f8)'},
-  {id:'ai', title:'AIアシスタント', desc:'データを分析し\n気づきをお知らせ', icon:'🤖', bg:'linear-gradient(145deg,#ebe4ff,#f5f1ff)'},
-  {id:'alerts', title:'通知・アラート', desc:'異常の検知・お知らせ\n重要な情報をすぐに', icon:'🔔', bg:'linear-gradient(145deg,#ffe2e8,#fff1f4)'}
-];
-
-const STORAGE_KEY = 'restaurantOpsHome.v2';
-let editing = false;
-let dragId = null;
-let pointerDrag = null;
-let longPressTimer = null;
-let state = loadState();
-
-const grid = document.getElementById('tileGrid');
-const editBtn = document.getElementById('editBtn');
-const addCard = document.getElementById('addCard');
-const resetBtn = document.getElementById('resetBtn');
-const modeText = document.getElementById('modeText');
-const introCard = document.getElementById('introCard');
-const bottomSheet = document.getElementById('bottomSheet');
-const sheetBackdrop = document.getElementById('sheetBackdrop');
-const hiddenList = document.getElementById('hiddenList');
-const closeSheet = document.getElementById('closeSheet');
-const toast = document.getElementById('toast');
-
-function loadState(){
-  try{
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)) || JSON.parse(localStorage.getItem('restaurantOpsHome.v1'));
-    if(saved?.order && Array.isArray(saved.order) && saved?.hidden && Array.isArray(saved.hidden)){
-      const valid = new Set(MODULES.map(m=>m.id));
-      const order = [...new Set(saved.order.filter(id=>valid.has(id)))];
-      MODULES.forEach(m=>{ if(!order.includes(m.id)) order.push(m.id); });
-      return {order, hidden:[...new Set(saved.hidden.filter(id=>valid.has(id)))]};
-    }
-  }catch(e){}
-  return {order: MODULES.map(m=>m.id), hidden: []};
-}
-function save(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    return true;
-  }catch(e){
-    return false;
-  }
-}
-function notifySaved(saved, message){
-  showToast(saved ? message : '変更はこの画面で有効です。端末に保存できないため、再読み込みで元に戻ります。');
-}
-function byId(id){ return MODULES.find(m=>m.id===id); }
-function visibleIds(){ return state.order.filter(id=>!state.hidden.includes(id)); }
-function setEditing(value){
-  editing = value;
-  if(!editing) cancelPointerDrag();
-  render();
-}
-
+const MODULES=[
+{id:'sales',title:'売上・経営分析',desc:'数字から、お店の今を知る',icon:'chart',soft:'#e5f0e9',ink:'#367557'},
+{id:'shift',title:'シフト・勤怠',desc:'チームの働き方を整える',icon:'shift',soft:'#f6ecdf',ink:'#a87636'},
+{id:'stock',title:'発注・在庫',desc:'必要なものを、必要なだけ',icon:'stock',soft:'#e7eef7',ink:'#587ba0'},
+{id:'accounting',title:'会計・経費',desc:'日々のお金の流れを管理',icon:'accounting',soft:'#edeafa',ink:'#8170a5'},
+{id:'staff',title:'スタッフ',desc:'一人ひとりと、チームを育む',icon:'staff',soft:'#f8e9e5',ink:'#b87565'},
+{id:'tasks',title:'タスク・業務',desc:'今日のやることを、着実に',icon:'tasks',soft:'#f5f0da',ink:'#9a8935'},
+{id:'reports',title:'レポート・分析',desc:'記録を、次の判断につなぐ',icon:'reports',soft:'#e9eeed',ink:'#607e74'},
+{id:'ai',title:'AIアシスタント',desc:'考える仕事に、もうひとり',icon:'ai',soft:'#f0e9f4',ink:'#92719f'},
+{id:'alerts',title:'通知・アラート',desc:'大切なことを、見逃さない',icon:'bell',soft:'#f7eae9',ink:'#b36e6a'}];
+let storage;try{storage=window.localStorage;}catch(e){storage={getItem(){return null;},setItem(){throw new Error('storage unavailable');}};}
+let state=HomeState.load(storage,MODULES.map(m=>m.id)),editing=false,drag=null,longPress=null,restoreFocus=null,sheetMode='';
+const $=id=>document.getElementById(id),grid=$('tileGrid'),sheet=$('bottomSheet'),body=$('sheetBody');
+document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
+const byId=id=>MODULES.find(m=>m.id===id),visibleIds=()=>state.order.filter(id=>!state.hidden.includes(id));
+function showToast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(showToast.timer);showToast.timer=setTimeout(()=>$('toast').hidden=true,4000);}
+function persist(message){const saved=HomeState.save(storage,state);if(!saved)showToast('変更はこの画面で有効です。端末に保存できないため、再読み込みで元に戻ります。');else if(message)showToast(message);return saved;}
+function focusTile(id,action='main'){grid.querySelector(`[data-id="${id}"] [data-action="${action}"]`)?.focus();}
 function render(){
-  document.body.classList.toggle('editing', editing);
-  editBtn.classList.toggle('active', editing);
-  editBtn.textContent = editing ? '編集完了' : '編集';
-  addCard.hidden = !editing;
-  resetBtn.hidden = !editing;
-  introCard.hidden = !editing;
-  modeText.textContent = editing ? '長押し・ドラッグで並べ替え / −で非表示' : 'よく使う機能';
-
-  grid.innerHTML='';
-  visibleIds().forEach(id=>{
-    const m = byId(id);
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className='tile';
-    btn.draggable = editing;
-    btn.dataset.id=id;
-    btn.style.setProperty('--tile-bg',m.bg);
-    btn.innerHTML = `<span class="remove" aria-label="非表示">−</span><span class="drag" aria-hidden="true">≡</span><div class="icon">${m.icon}</div><h3>${m.title}</h3><p>${m.desc.replace(/\n/g,'<br>')}</p>`;
-
-    btn.addEventListener('click',(e)=>{
-      if(btn.dataset.suppressClick==='1'){
-        btn.dataset.suppressClick='0';
-        return;
-      }
-      if(editing){
-        if(e.target.closest('.remove')) hideModule(id);
-        return;
-      }
-      showToast(`${m.title}：詳細画面は後から設計します`);
-    });
-
-    btn.addEventListener('dragstart',(e)=>{
-      if(!editing){ e.preventDefault(); return; }
-      dragId=id;
-      btn.classList.add('dragging');
-      if(e.dataTransfer) e.dataTransfer.effectAllowed='move';
-    });
-    btn.addEventListener('dragend',()=>{ dragId=null; btn.classList.remove('dragging'); });
-    btn.addEventListener('dragover',(e)=>{ if(editing) e.preventDefault(); });
-    btn.addEventListener('drop',(e)=>{ e.preventDefault(); if(dragId && dragId!==id) reorder(dragId,id); });
-
-    btn.addEventListener('pointerdown',(e)=>handlePointerDown(e, btn, id));
-    grid.appendChild(btn);
-  });
-  renderHidden();
+ document.body.classList.toggle('editing',editing);$('editBtn').classList.toggle('active',editing);$('editBtn').setAttribute('aria-pressed',String(editing));$('editLabel').textContent=editing?'完了':'編集';
+ ['addCard','resetBtn','introCard'].forEach(id=>$(id).hidden=!editing);$('modeText').textContent=editing?'使いやすい順番に、並べ替え。':'よく使う機能をまとめて。';
+ const visible=visibleIds();$('moduleCount').textContent=visible.length;$('emptyState').hidden=visible.length>0;
+ grid.innerHTML='';visible.forEach((id,index)=>{const m=byId(id),tile=document.createElement('article');tile.className='tile';tile.dataset.id=id;tile.style.setProperty('--tile-soft',m.soft);tile.style.setProperty('--tile-ink',m.ink);
+ tile.innerHTML=`<button class="tile-main" type="button" data-action="main" aria-label="${m.title}${editing?'：長押し・ドラッグで移動':''}"><span class="module-icon">${icon(m.icon)}</span><span class="tile-arrow">${icon('arrow')}</span><h3>${m.title}</h3><p>${m.desc}</p></button><div class="tile-actions" ${editing?'':'hidden'}><button class="remove" data-action="hide" aria-label="${m.title}を非表示">${icon('minus')}</button><button data-action="left" aria-label="${m.title}を前へ移動" ${index===0?'disabled':''}>${icon('left')}</button><button data-action="right" aria-label="${m.title}を後ろへ移動" ${index===visible.length-1?'disabled':''}>${icon('right')}</button></div>`;
+ tile.querySelector('[data-action="main"]').addEventListener('click',()=>{if(Date.now()<suppressUntil)return;if(!editing)showComing(m.title);});
+ tile.querySelector('[data-action="hide"]').addEventListener('click',()=>{state.hidden.push(id);persist('ホームから非表示にしました');render();focusTile(visible[index+1]||visible[index-1]);if(visible.length===1)$('addCard').focus();});
+ ['left','right'].forEach((direction,i)=>tile.querySelector(`[data-action="${direction}"]`).addEventListener('click',()=>{const target=visible[index+(i?1:-1)];if(target){state=HomeState.move(state,id,target);persist();render();focusTile(id);}}));
+ tile.querySelector('.tile-main').addEventListener('pointerdown',event=>onDown(event,tile,id));grid.appendChild(tile);
+ });
 }
-
-function handlePointerDown(e, tile, id){
-  if(e.target.closest('.remove')) return;
-
-  if(!editing){
-    clearTimeout(longPressTimer);
-    const sx=e.clientX, sy=e.clientY;
-    longPressTimer=setTimeout(()=>{
-      setEditing(true);
-      showToast('編集モードにしました');
-    },520);
-    const cancel=()=>{
-      clearTimeout(longPressTimer);
-      window.removeEventListener('pointerup',cancel);
-      window.removeEventListener('pointercancel',cancel);
-      window.removeEventListener('pointermove',moveCancel);
-    };
-    const moveCancel=(ev)=>{
-      if(Math.hypot(ev.clientX-sx,ev.clientY-sy)>12) cancel();
-    };
-    window.addEventListener('pointerup',cancel,{once:true});
-    window.addEventListener('pointercancel',cancel,{once:true});
-    window.addEventListener('pointermove',moveCancel);
-    return;
-  }
-
-  if(e.pointerType==='mouse') return;
-  e.preventDefault();
-  tile.setPointerCapture?.(e.pointerId);
-  startPointerDrag(tile,id,e);
+let suppressUntil=0;
+function setEditing(value){clearLongPress();cancelDrag();editing=value;render();}
+function clearLongPress(){if(longPress){clearTimeout(longPress.timer);longPress=null;}}
+function onDown(event,tile,id){
+ if(!event.isPrimary||event.button!==0)return;
+ if(!editing){clearLongPress();longPress={x:event.clientX,y:event.clientY,pointer:event.pointerId,timer:setTimeout(()=>{longPress=null;suppressUntil=Date.now()+800;setEditing(true);showToast('ホームを編集できます');},520)};return;}
+ event.preventDefault();cancelDrag();const rect=tile.getBoundingClientRect();drag={id,tile,pointer:event.pointerId,x:event.clientX,y:event.clientY,dx:event.clientX-rect.left,dy:event.clientY-rect.top,rect,target:null,ghost:null};tile.setPointerCapture(event.pointerId);
 }
-
-function startPointerDrag(tile,id,e){
-  cancelPointerDrag();
-  const rect=tile.getBoundingClientRect();
-  pointerDrag={id,tile,pointerId:e.pointerId,offsetX:e.clientX-rect.left,offsetY:e.clientY-rect.top};
-  tile.classList.add('pointer-dragging');
-  tile.dataset.suppressClick='1';
-  updateFloatingTile(e.clientX,e.clientY);
-
-  tile.addEventListener('pointermove',onPointerMove);
-  tile.addEventListener('pointerup',onPointerUp,{once:true});
-  tile.addEventListener('pointercancel',onPointerUp,{once:true});
+function onMove(event){
+ if(longPress&&event.pointerId===longPress.pointer&&Math.hypot(event.clientX-longPress.x,event.clientY-longPress.y)>10)clearLongPress();
+ if(!drag||event.pointerId!==drag.pointer)return;
+ if(!drag.ghost&&Math.hypot(event.clientX-drag.x,event.clientY-drag.y)<7)return;
+ event.preventDefault();if(!drag.ghost){drag.ghost=drag.tile.cloneNode(true);drag.ghost.classList.add('drag-ghost');drag.ghost.setAttribute('aria-hidden','true');drag.ghost.inert=true;drag.ghost.style.width=drag.rect.width+'px';document.body.appendChild(drag.ghost);drag.tile.classList.add('dragging');}
+ drag.ghost.style.left=(event.clientX-drag.dx)+'px';drag.ghost.style.top=(event.clientY-drag.dy)+'px';
+ const hit=document.elementFromPoint(event.clientX,event.clientY)?.closest('.tile:not(.drag-ghost)');grid.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));drag.target=hit&&hit.dataset.id!==drag.id?hit.dataset.id:null;if(drag.target)hit.classList.add('drop-target');
+ if(event.clientY<80)window.scrollBy(0,-9);else if(event.clientY>window.innerHeight-100)window.scrollBy(0,9);
 }
-
-function onPointerMove(e){
-  if(!pointerDrag || e.pointerId!==pointerDrag.pointerId) return;
-  e.preventDefault();
-  updateFloatingTile(e.clientX,e.clientY);
-  const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.tile');
-  if(target && target.dataset.id && target.dataset.id!==pointerDrag.id){
-    reorder(pointerDrag.id,target.dataset.id,false);
-    pointerDrag.id=target.dataset.id===pointerDrag.id ? pointerDrag.id : pointerDrag.tile.dataset.id;
-  }
-}
-
-function updateFloatingTile(x,y){
-  if(!pointerDrag) return;
-  const {tile,offsetX,offsetY}=pointerDrag;
-  tile.style.left=`${x-offsetX}px`;
-  tile.style.top=`${y-offsetY}px`;
-}
-
-function onPointerUp(e){
-  if(!pointerDrag || e.pointerId!==pointerDrag.pointerId) return;
-  const {tile}=pointerDrag;
-  tile.releasePointerCapture?.(e.pointerId);
-  cancelPointerDrag();
-  const saved = save();
-  render();
-  if(!saved) notifySaved(false);
-}
-
-function cancelPointerDrag(){
-  if(!pointerDrag) return;
-  const {tile}=pointerDrag;
-  tile.classList.remove('pointer-dragging');
-  tile.style.left='';
-  tile.style.top='';
-  tile.removeEventListener('pointermove',onPointerMove);
-  pointerDrag=null;
-}
-
-function hideModule(id){
-  if(!state.hidden.includes(id)) state.hidden.push(id);
-  const saved = save(); render(); notifySaved(saved, 'ホームから非表示にしました');
-}
-function restoreModule(id){
-  state.hidden = state.hidden.filter(x=>x!==id);
-  if(!state.order.includes(id)) state.order.push(id);
-  const saved = save(); render(); notifySaved(saved, 'ホームに追加しました');
-}
-function reorder(fromId,toId,rerender=true){
-  const visible = visibleIds();
-  const from=visible.indexOf(fromId), to=visible.indexOf(toId);
-  if(from<0||to<0) return;
-  visible.splice(to,0,visible.splice(from,1)[0]);
-  const hiddenSet = new Set(state.hidden);
-  const hiddenInOrder = state.order.filter(id=>hiddenSet.has(id));
-  state.order = [...visible, ...hiddenInOrder.filter(id=>!visible.includes(id))];
-  if(rerender){
-    const saved = save();
-    render();
-    if(!saved) notifySaved(false);
-  }
-}
-function renderHidden(){
-  const ids = state.hidden;
-  hiddenList.innerHTML = ids.length ? '' : '<p style="color:#7b8797;font-size:13px">現在、非表示の機能はありません。</p>';
-  ids.forEach(id=>{
-    const m=byId(id);
-    const row=document.createElement('div');
-    row.className='hidden-item';
-    row.innerHTML=`<div class="mini-icon" style="--mini-bg:${m.bg}">${m.icon}</div><div class="copy"><strong>${m.title}</strong><span>${m.desc.replace(/\n/g,' / ')}</span></div><button type="button">追加</button>`;
-    row.querySelector('button').addEventListener('click',()=>restoreModule(id));
-    hiddenList.appendChild(row);
-  });
-}
-function openSheet(){ bottomSheet.hidden=false; sheetBackdrop.hidden=false; document.body.style.overflow='hidden'; }
-function closeSheetFn(){ bottomSheet.hidden=true; sheetBackdrop.hidden=true; document.body.style.overflow=''; }
-function showToast(msg){ toast.textContent=msg; toast.hidden=false; clearTimeout(showToast.t); showToast.t=setTimeout(()=>toast.hidden=true,1700); }
-
-editBtn.addEventListener('click',()=>setEditing(!editing));
-addCard.addEventListener('click',openSheet);
-closeSheet.addEventListener('click',closeSheetFn);
-sheetBackdrop.addEventListener('click',closeSheetFn);
-resetBtn.addEventListener('click',()=>{ state={order:MODULES.map(m=>m.id),hidden:[]}; const saved=save(); render(); notifySaved(saved, '初期状態に戻しました'); });
-document.getElementById('alertsBtn').addEventListener('click',()=>showToast('通知画面は後から設計します'));
-
+function onUp(event){clearLongPress();if(!drag||event.pointerId!==drag.pointer)return;const {id,target,ghost}=drag;cancelDrag();if(ghost){suppressUntil=Date.now()+500;if(target){state=HomeState.move(state,id,target);persist('並び順を変更しました');}render();focusTile(id);}}
+function cancelDrag(){if(!drag)return;const {tile,pointer,ghost}=drag;ghost?.remove();tile.classList.remove('dragging');if(tile.hasPointerCapture(pointer))tile.releasePointerCapture(pointer);grid.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));drag=null;}
+window.addEventListener('pointermove',onMove,{passive:false});window.addEventListener('pointerup',onUp);window.addEventListener('pointercancel',()=>{clearLongPress();cancelDrag();});window.addEventListener('blur',()=>{clearLongPress();cancelDrag();});
+function openSheet(title,mode='info'){clearLongPress();cancelDrag();restoreFocus=document.activeElement;sheetMode=mode;$('sheetTitle').textContent=title;body.replaceChildren();sheet.hidden=false;$('sheetBackdrop').hidden=false;document.body.style.overflow='hidden';document.querySelector('.app-shell').inert=true;$('closeSheet').focus();}
+function closeSheet(){sheet.hidden=true;$('sheetBackdrop').hidden=true;document.body.style.overflow='';document.querySelector('.app-shell').inert=false;if(restoreFocus?.isConnected)restoreFocus.focus();else $('editBtn').focus();sheetMode='';}
+function showComing(title){openSheet(title);const p=document.createElement('p');p.className='sheet-message';p.textContent='この機能は準備中です。まずはホームを使いやすく整え、各機能の詳細は次の段階で設計します。';body.appendChild(p);}
+function renderHidden(){body.innerHTML='<div class="hidden-list"></div>';const list=body.firstElementChild;if(!state.hidden.length){list.innerHTML='<p class="sheet-message">すべての機能をホームに表示しています。</p>';return;}state.hidden.forEach(id=>{const m=byId(id),row=document.createElement('div');row.className='hidden-item';row.style.setProperty('--tile-soft',m.soft);row.style.setProperty('--tile-ink',m.ink);row.innerHTML=`<span class="module-icon">${icon(m.icon)}</span><div class="copy"><strong>${m.title}</strong><p>${m.desc}</p></div><button aria-label="${m.title}を追加">追加</button>`;row.querySelector('button').addEventListener('click',()=>{state.hidden=state.hidden.filter(x=>x!==id);persist('ホームに追加しました');render();renderHidden();body.querySelector('button')?.focus();if(!state.hidden.length)$('closeSheet').focus();});list.appendChild(row);});}
+$('editBtn').addEventListener('click',()=>setEditing(!editing));$('addCard').addEventListener('click',()=>{openSheet('機能を追加','add');renderHidden();});$('closeSheet').addEventListener('click',closeSheet);$('sheetBackdrop').addEventListener('click',closeSheet);
+$('resetBtn').addEventListener('click',()=>{openSheet('配置をリセット');body.innerHTML='<p class="sheet-message">9つの機能を初期の並び順に戻します。</p><button class="primary-button" id="confirmReset" style="margin-top:20px">初期配置に戻す</button>';$('confirmReset').addEventListener('click',()=>{state=HomeState.normalize(null,MODULES.map(m=>m.id));persist('初期配置に戻しました');render();closeSheet();});});
+$('alertsBtn').addEventListener('click',()=>showComing('お知らせ'));$('storeBtn').addEventListener('click',()=>showComing('店舗を選択'));document.querySelectorAll('[data-coming]').forEach(btn=>btn.addEventListener('click',()=>showComing(btn.dataset.coming)));$('homeBtn').addEventListener('click',()=>{setEditing(false);window.scrollTo({top:0,behavior:'smooth'});});
+$('settingsBtn').addEventListener('click',()=>{openSheet('ホームの設定');body.innerHTML='<p class="sheet-message">ホームの並び順と表示する機能は、この端末に保存されます。</p><button class="settings-link" id="customize" style="width:100%;background:white">ホームを編集 <span>→</span></button><a class="settings-link" href="icon-candidates.html">アプリアイコン 8案を見る <span>↗</span></a>';$('customize').addEventListener('click',()=>{closeSheet();setEditing(true);$('editBtn').focus();});});
+document.addEventListener('keydown',event=>{if(sheet.hidden)return;if(event.key==='Escape'){event.preventDefault();closeSheet();}if(event.key==='Tab'){const all=[...sheet.querySelectorAll('button:not(:disabled),a[href],[tabindex="0"]')];const first=all[0],last=all[all.length-1];if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}});
 render();
