@@ -4,8 +4,8 @@
   "description": "必要な機能を、あなたのホームに。飲食店の店舗運営ホーム。",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f5f6f3",
-  "theme_color": "#206553",
+  "background_color": "#f2f2f7",
+  "theme_color": "#f2f2f7",
   "icons": [
     {
       "src": "app-icon.svg",
