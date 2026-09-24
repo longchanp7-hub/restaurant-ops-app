@@ -13,7 +13,8 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-html{margin:0;min-height:100%;background:var(--bg)}\nbody{margin:0;min-height:100%;background:transparent}
+html{margin:0;min-height:100%;background:var(--bg)}
+body{margin:0;min-height:100%;background:transparent}
 body{
   min-height:100dvh;
   color:var(--text);
@@ -27,7 +28,8 @@ svg{display:block}
 .wallpaper{
   position:fixed;
   inset:0;
-  z-index:0;\n  pointer-events:none;
+  z-index:0;
+  pointer-events:none;
   overflow:hidden;
   background:
     radial-gradient(120% 95% at 8% 10%,rgba(226,198,209,.96) 0 22%,transparent 48%),
@@ -58,6 +60,8 @@ svg{display:block}
 }
 
 .app-shell{
+  position:relative;
+  z-index:1;
   width:min(100%,480px);
   min-height:100dvh;
   margin:0 auto;
