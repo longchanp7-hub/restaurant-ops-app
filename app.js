@@ -1,13 +1,13 @@
 const MODULES=[
-{id:'sales',title:'売上・経営分析',desc:'数字から、お店の今を知る',icon:'chart',soft:'#e5f0e9',ink:'#367557'},
-{id:'shift',title:'シフト・勤怠',desc:'チームの働き方を整える',icon:'shift',soft:'#f6ecdf',ink:'#a87636'},
-{id:'stock',title:'発注・在庫',desc:'必要なものを、必要なだけ',icon:'stock',soft:'#e7eef7',ink:'#587ba0'},
-{id:'accounting',title:'会計・経費',desc:'日々のお金の流れを管理',icon:'accounting',soft:'#edeafa',ink:'#8170a5'},
-{id:'staff',title:'スタッフ',desc:'一人ひとりと、チームを育む',icon:'staff',soft:'#f8e9e5',ink:'#b87565'},
-{id:'tasks',title:'タスク・業務',desc:'今日のやることを、着実に',icon:'tasks',soft:'#f5f0da',ink:'#9a8935'},
-{id:'reports',title:'レポート・分析',desc:'記録を、次の判断につなぐ',icon:'reports',soft:'#e9eeed',ink:'#607e74'},
-{id:'ai',title:'AIアシスタント',desc:'考える仕事に、もうひとり',icon:'ai',soft:'#f0e9f4',ink:'#92719f'},
-{id:'alerts',title:'通知・アラート',desc:'大切なことを、見逃さない',icon:'bell',soft:'#f7eae9',ink:'#b36e6a'}];
+{id:'sales',title:'売上・経営分析',desc:'数字から、お店の今を知る',icon:'chart',soft:'#34C759',ink:'#FFFFFF'},
+{id:'shift',title:'シフト・勤怠',desc:'チームの働き方を整える',icon:'shift',soft:'#FF9F0A',ink:'#FFFFFF'},
+{id:'stock',title:'発注・在庫',desc:'必要なものを、必要なだけ',icon:'stock',soft:'#0A84FF',ink:'#FFFFFF'},
+{id:'accounting',title:'会計・経費',desc:'日々のお金の流れを管理',icon:'accounting',soft:'#AF52DE',ink:'#FFFFFF'},
+{id:'staff',title:'スタッフ',desc:'一人ひとりと、チームを育む',icon:'staff',soft:'#FF375F',ink:'#FFFFFF'},
+{id:'tasks',title:'タスク・業務',desc:'今日のやることを、着実に',icon:'tasks',soft:'#FFD60A',ink:'#4A3A00'},
+{id:'reports',title:'レポート・分析',desc:'記録を、次の判断につなぐ',icon:'reports',soft:'#30B0C7',ink:'#FFFFFF'},
+{id:'ai',title:'AIアシスタント',desc:'考える仕事に、もうひとり',icon:'ai',soft:'#5E5CE6',ink:'#FFFFFF'},
+{id:'alerts',title:'通知・アラート',desc:'大切なことを、見逃さない',icon:'bell',soft:'#FF453A',ink:'#FFFFFF'}];
 let storage;try{storage=window.localStorage;}catch(e){storage={getItem(){return null;},setItem(){throw new Error('storage unavailable');}};}
 let state=HomeState.load(storage,MODULES.map(m=>m.id)),editing=false,drag=null,longPress=null,restoreFocus=null,sheetMode='';
 const $=id=>document.getElementById(id),grid=$('tileGrid'),sheet=$('bottomSheet'),body=$('sheetBody');
