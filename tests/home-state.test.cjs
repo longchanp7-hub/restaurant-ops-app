@@ -2,7 +2,12 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const HomeState = require('../home-state.js');
 
-const IDS = ['sales','shift','stock','accounting','staff','tasks','reports','ai','alerts'];
+const IDS = [
+  'sales','shift','stock','accounting',
+  'staff','tasks','reports','alerts',
+  'booking','customers','menu','help',
+  'instagram','facebook','x','tiktok'
+];
 
 function memoryStorage(seed = {}, blocked = false) {
   const map = new Map(Object.entries(seed));
@@ -16,7 +21,7 @@ function memoryStorage(seed = {}, blocked = false) {
   };
 }
 
-test('normalize removes duplicate and unknown IDs while restoring missing known IDs', () => {
+test('normalize removes duplicate and unknown IDs while restoring all current modules', () => {
   const state = HomeState.normalize({
     order: ['sales','sales','unknown','stock'],
     hidden: ['sales','sales','unknown']
@@ -28,30 +33,32 @@ test('normalize removes duplicate and unknown IDs while restoring missing known 
   assert.deepEqual(new Set(state.order), new Set(IDS));
 });
 
-test('load falls back to all modules when v2 JSON is broken', () => {
+test('broken stored JSON falls back to all current modules', () => {
   const storage = memoryStorage({'restaurantOpsHome.v2':'{broken'});
   assert.deepEqual(HomeState.load(storage, IDS), {order: IDS, hidden: []});
 });
 
-test('load falls back to legacy v1 when v2 is missing or invalid', () => {
-  const legacy = {order:['shift','sales'], hidden:['alerts']};
+test('legacy saved state keeps known modules and adds newly introduced modules', () => {
+  const legacy = {order:['shift','sales','ai'], hidden:['alerts','ai']};
   const storage = memoryStorage({
-    'restaurantOpsHome.v2':'{"order":"bad","hidden":[]}',
     'restaurantOpsHome.v1':JSON.stringify(legacy)
   });
   const state = HomeState.load(storage, IDS);
   assert.equal(state.order[0], 'shift');
   assert.equal(state.order[1], 'sales');
+  assert.equal(state.order.includes('ai'), false);
+  assert.equal(state.order.length, IDS.length);
   assert.deepEqual(state.hidden, ['alerts']);
 });
 
 test('v2 takes precedence over v1 when both are valid', () => {
   const storage = memoryStorage({
-    'restaurantOpsHome.v2':JSON.stringify({order:['ai'],hidden:['stock']}),
+    'restaurantOpsHome.v2':JSON.stringify({order:['instagram','sales'],hidden:['stock']}),
     'restaurantOpsHome.v1':JSON.stringify({order:['sales'],hidden:['alerts']})
   });
   const state = HomeState.load(storage, IDS);
-  assert.equal(state.order[0], 'ai');
+  assert.equal(state.order[0], 'instagram');
+  assert.equal(state.order[1], 'sales');
   assert.deepEqual(state.hidden, ['stock']);
 });
 
@@ -60,14 +67,14 @@ test('save returns false instead of throwing when storage rejects writes', () =>
   assert.equal(HomeState.save(storage, {order: IDS, hidden: []}), false);
 });
 
-test('save writes state to the v2 key when storage is available', () => {
+test('save writes the current 16-module state to v2', () => {
   const storage = memoryStorage();
-  const state = {order:[...IDS], hidden:['alerts']};
+  const state = {order:[...IDS], hidden:['alerts','facebook']};
   assert.equal(HomeState.save(storage, state), true);
   assert.deepEqual(JSON.parse(storage.map.get('restaurantOpsHome.v2')), state);
 });
 
-test('move reorders a module and preserves hidden state', () => {
+test('move reorders an app icon and preserves hidden state', () => {
   const original = {order:[...IDS], hidden:['alerts']};
   const moved = HomeState.move(original, 'sales', 'stock');
   assert.equal(moved.order[2], 'sales');
@@ -76,7 +83,7 @@ test('move reorders a module and preserves hidden state', () => {
   assert.notStrictEqual(moved.hidden, original.hidden);
 });
 
-test('move is a no-op for unknown IDs or identical source/target', () => {
+test('move is a no-op for unknown IDs or identical source and target', () => {
   const state = {order:[...IDS], hidden:[]};
   assert.strictEqual(HomeState.move(state, 'missing', 'stock'), state);
   assert.strictEqual(HomeState.move(state, 'sales', 'sales'), state);
