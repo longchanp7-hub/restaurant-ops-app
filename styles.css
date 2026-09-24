@@ -162,6 +162,7 @@ svg{display:block}
 }
 .icon-wrap{
   position:relative;
+  display:block;
   width:clamp(58px,17vw,70px);
   height:clamp(58px,17vw,70px);
   margin:0 auto 6px;
@@ -353,6 +354,7 @@ svg{display:block}
 }
 .dock-icon-wrap{
   position:relative;
+  display:block;
   width:clamp(58px,17vw,70px);
   height:clamp(58px,17vw,70px);
 }
