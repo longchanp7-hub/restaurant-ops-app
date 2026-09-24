@@ -190,8 +190,8 @@ svg{display:block}
   overflow:hidden;
 }
 .module-icon svg{
-  width:56%;
-  height:56%;
+  width:68%;
+  height:68%;
 }
 .module-icon.brand svg{width:100%;height:100%}
 .app-label{
@@ -244,7 +244,7 @@ svg{display:block}
 .dock-remove svg{width:15px;height:15px;stroke-width:2.4}
 .dock-remove{
   top:-7px;
-  left:-7px;
+  left:calc(50% - clamp(58px,17vw,70px)/2 - 7px);
 }
 .editing .tile,
 .editing .dock-app{
@@ -386,7 +386,7 @@ svg{display:block}
     0 5px 13px rgba(0,0,0,.3);
   overflow:hidden;
 }
-.dock-icon svg{width:56%;height:56%}
+.dock-icon svg{width:68%;height:68%}
 .dock-icon.brand svg{width:100%;height:100%}
 
 .sheet-backdrop{
