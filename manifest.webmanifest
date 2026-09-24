@@ -1,11 +1,11 @@
 {
   "name": "飲食店運営アプリ",
   "short_name": "店舗運営",
-  "description": "必要な機能を、あなたのホームに。飲食店の店舗運営ホーム。",
+  "description": "飲食店の経営・現場管理をまとめる店舗運営ホーム",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f2f2f7",
-  "theme_color": "#f2f2f7",
+  "background_color": "#0b0b11",
+  "theme_color": "#0b0b11",
   "icons": [
     {
       "src": "app-icon.svg",
