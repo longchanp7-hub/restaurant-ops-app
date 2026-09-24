@@ -4,8 +4,8 @@
   "description": "飲食店の経営・現場管理をまとめる店舗運営ホーム",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0b0b11",
-  "theme_color": "#0b0b11",
+  "background_color": "#b997a9",
+  "theme_color": "#b997a9",
   "icons": [
     {
       "src": "app-icon.svg",
