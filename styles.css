@@ -68,7 +68,7 @@ svg{display:block}
   padding:
     calc(12px + env(safe-area-inset-top))
     16px
-    calc(18px + env(safe-area-inset-bottom));
+    calc(168px + env(safe-area-inset-bottom));
   display:flex;
   flex-direction:column;
 }
@@ -257,7 +257,8 @@ svg{display:block}
 }
 .editing .tile:nth-child(2n),
 .editing .dock-app:nth-child(2n){animation-direction:alternate-reverse}
-.editing .drag-handle{touch-action:none}
+.editing .drag-handle,
+.editing .ios-dock{touch-action:none}
 .editing .badge{display:none}
 @keyframes ios-jiggle{
   from{transform:rotate(-1.1deg)}
@@ -317,12 +318,18 @@ svg{display:block}
 .add-card svg{width:16px;height:16px}
 
 .home-controls{
-  margin-top:auto;
+  position:fixed;
+  left:50%;
+  bottom:calc(112px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  width:min(calc(100% - 24px),456px);
+  z-index:24;
   display:grid;
   justify-items:center;
   gap:8px;
-  padding-top:10px;
+  pointer-events:none;
 }
+.home-controls .search-pill{pointer-events:auto}
 .page-dots{display:flex;gap:6px;align-items:center;height:9px}
 .page-dots span{
   width:6px;height:6px;border-radius:50%;
@@ -345,11 +352,17 @@ svg{display:block}
 .search-pill svg{width:15px;height:15px}
 
 .ios-dock{
+  position:fixed;
+  left:50%;
+  bottom:calc(10px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  width:min(calc(100% - 24px),456px);
+  z-index:25;
   display:grid;
   grid-template-columns:repeat(4,1fr);
   align-items:center;
   gap:8px;
-  margin-top:10px;
+  margin:0;
   padding:11px 10px;
   border-radius:30px;
   background:var(--dock);
@@ -359,6 +372,8 @@ svg{display:block}
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.12),
     0 12px 28px rgba(0,0,0,.22);
+  touch-action:pan-x;
+  overscroll-behavior:contain;
 }
 .dock-app{
   position:relative;
@@ -507,16 +522,13 @@ svg{display:block}
   .ios-dock{gap:4px;padding-left:8px;padding-right:8px}
 }
 @media(max-height:720px){
-  .tile-grid{gap-top:9px}
-  .home-controls{padding-top:5px}
-  .ios-dock{margin-top:7px}
+  .home-controls{bottom:calc(108px + env(safe-area-inset-bottom))}
 }
 @media(min-width:700px){
   body{display:grid;place-items:start center;padding:18px 0}
   .app-shell{
     min-height:calc(100dvh - 36px);
     border-radius:40px;
-    overflow:hidden;
     box-shadow:0 24px 80px rgba(0,0,0,.45);
     background:rgba(0,0,0,.06);
   }
