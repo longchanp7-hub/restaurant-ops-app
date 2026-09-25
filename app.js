@@ -229,10 +229,15 @@ function onPointerMove(event){
   const dockHit=hit?.closest('#dockGrid');
   const gridHit=hit?.closest('#tileGrid');
 
-  if(target&&target.dataset.id!==drag.id){
-    drag.targetId=target.dataset.id;
-    drag.targetZone=target.dataset.zone;
-    target.classList.add('drop-target');
+  if(target){
+    if(target.dataset.id!==drag.id){
+      drag.targetId=target.dataset.id;
+      drag.targetZone=target.dataset.zone;
+      target.classList.add('drop-target');
+    }else{
+      drag.targetId=null;
+      drag.targetZone=null;
+    }
   }else if(dockHit){
     drag.targetId=null;
     drag.targetZone='dock';
@@ -246,8 +251,7 @@ function onPointerMove(event){
     drag.targetZone=null;
   }
 
-  if(event.clientY<70)window.scrollBy(0,-8);
-  else if(event.clientY>window.innerHeight-120)window.scrollBy(0,8);
+  // iPhoneのホーム画面のように、ドラッグ中に縦方向へ勝手にスクロールさせない。
 }
 
 function onPointerUp(event){
