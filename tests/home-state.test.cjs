@@ -4,7 +4,7 @@ const HomeState = require('../home-state.js');
 
 const HOME = [
   'sales','shift','stock','staff','accounting','tasks','reports','alerts',
-  'booking','customers','menu','help','instagram','facebook','x','tiktok'
+  'booking','customers','menu','help','website','instagram','facebook','x','tiktok'
 ];
 const DOCK = ['ai','line','calendar','settings'];
 const ALL = [...HOME,...DOCK];
@@ -31,7 +31,7 @@ test('legacy normalize still removes duplicate and unknown IDs', () => {
   assert.deepEqual(state.hidden,['sales']);
 });
 
-test('layout defaults to 16 home apps and four dock apps', () => {
+test('layout defaults to 17 home apps and four dock apps', () => {
   const layout = HomeState.normalizeLayout(null,ALL,HOME,DOCK,4);
   assert.deepEqual(layout.home,HOME);
   assert.deepEqual(layout.dock,DOCK);

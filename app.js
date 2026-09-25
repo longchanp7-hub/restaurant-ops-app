@@ -11,6 +11,7 @@ const APPS=[
   {id:'customers',title:'顧客',desc:'顧客・来店履歴',icon:'customers',bg:'linear-gradient(145deg,#239bff,#087cf0)',ink:'#fff',zone:'home'},
   {id:'menu',title:'メニュー',desc:'商品・価格・メニュー',icon:'menu',bg:'linear-gradient(145deg,#ffad2e,#ff8212)',ink:'#fff',zone:'home'},
   {id:'help',title:'ヘルプ',desc:'マニュアル・問い合わせ',icon:'help',bg:'linear-gradient(145deg,#a1a1a7,#737378)',ink:'#fff',zone:'home'},
+  {id:'website',title:'ホームページ',desc:'公式サイト・Web更新',icon:'website',bg:'linear-gradient(145deg,#56CCF2,#2F80ED)',ink:'#fff',zone:'home'},
   {id:'instagram',title:'Instagram',desc:'業務用Instagram',icon:'instagram',bg:'radial-gradient(circle at 30% 105%,#fdf497 0 8%,#fdf49700 32%),linear-gradient(135deg,#833AB4 0%,#FD1D1D 52%,#FCB045 100%)',ink:'#fff',brand:true,badge:4,zone:'home'},
   {id:'facebook',title:'Facebook',desc:'業務用Facebook',icon:'facebook',bg:'#1877F2',ink:'#fff',brand:true,badge:1,zone:'home'},
   {id:'x',title:'X',desc:'業務用X',icon:'x',bg:'#050505',ink:'#fff',brand:true,zone:'home'},

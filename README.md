@@ -19,7 +19,7 @@
 ## ホームグリッド
 
 売上 / シフト / 在庫 / 会計 / スタッフ / タスク / レポート / 通知 /
-予約 / 顧客 / メニュー / ヘルプ / Instagram / Facebook / X / TikTok
+予約 / 顧客 / メニュー / ヘルプ / ホームページ / Instagram / Facebook / X / TikTok
 
 ## 固定ドック
 
