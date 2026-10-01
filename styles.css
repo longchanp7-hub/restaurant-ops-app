@@ -68,7 +68,7 @@ svg{display:block}
   padding:
     calc(12px + env(safe-area-inset-top))
     16px
-    calc(168px + env(safe-area-inset-bottom));
+    calc(24px + env(safe-area-inset-bottom));
   display:flex;
   flex-direction:column;
 }
@@ -239,8 +239,7 @@ svg{display:block}
   border:1px solid rgba(255,255,255,.18);
   z-index:4;
 }
-.remove-home,
-.dock-remove{
+.remove-home{
   position:absolute;
   top:-7px;
   left:calc(50% - clamp(58px,17vw,70px)/2 - 7px);
@@ -255,25 +254,16 @@ svg{display:block}
   border:1px solid rgba(255,255,255,.2);
   z-index:8;
 }
-.remove-home svg,
-.dock-remove svg{width:15px;height:15px;stroke-width:2.4}
-.dock-remove{
-  top:-7px;
-  left:calc(50% - clamp(58px,17vw,70px)/2 - 7px);
-}
-.editing .tile,
-.editing .dock-app{
+.remove-home svg svg{width:15px;height:15px;stroke-width:2.4}
+.editing .tile{
   touch-action:none;
 }
-.editing .tile .module-icon,
-.editing .dock-app .dock-icon{
+.editing .tile .module-icon .dock-icon{
   animation:ios-jiggle .26s infinite alternate ease-in-out;
   transform-origin:50% 50%;
 }
-.editing .tile:nth-child(2n) .module-icon,
-.editing .dock-app:nth-child(2n) .dock-icon{animation-direction:alternate-reverse}
-.editing .drag-handle,
-.editing .ios-dock{touch-action:none}
+.editing .tile:nth-child(2n) .module-icon:nth-child(2n) .dock-icon{animation-direction:alternate-reverse}
+.editing .drag-handle{touch-action:none}
 .editing .badge{display:none}
 @keyframes ios-jiggle{
   from{transform:rotate(-.58deg)}
@@ -282,8 +272,7 @@ svg{display:block}
 .dragging{
   opacity:.16;
 }
-.dragging .module-icon,
-.dragging .dock-icon{
+.dragging .module-icon{
   animation:none!important;
 }
 .drag-ghost{
@@ -300,21 +289,18 @@ svg{display:block}
   contain:layout paint style;
   filter:drop-shadow(0 14px 22px rgba(0,0,0,.38));
 }
-.drag-ghost .module-icon,
-.drag-ghost .dock-icon{
+.drag-ghost .module-icon{
   animation:none!important;
 }
 .drag-ghost .remove-home,
 .drag-ghost .dock-remove{display:none!important}
-.drop-target .module-icon,
-.drop-target .dock-icon{
+.drop-target .module-icon{
   box-shadow:
     inset 0 1px 1px rgba(255,255,255,.3),
     0 0 0 3px rgba(255,255,255,.72),
     0 10px 24px rgba(0,0,0,.24);
 }
-.tile-grid.drop-target,
-.ios-dock.drop-target{
+.tile-grid.drop-target{
   box-shadow:
     inset 0 0 0 2px rgba(255,255,255,.42),
     0 12px 28px rgba(0,0,0,.22);
@@ -350,96 +336,7 @@ svg{display:block}
 }
 .add-card svg{width:16px;height:16px}
 
-.home-controls{
-  position:fixed;
-  left:50%;
-  bottom:calc(112px + env(safe-area-inset-bottom));
-  transform:translateX(-50%);
-  width:min(calc(100% - 24px),456px);
-  z-index:24;
-  display:grid;
-  justify-items:center;
-  gap:8px;
-  pointer-events:none;
-}
-.home-controls .search-pill{pointer-events:auto}
-.page-dots{display:flex;gap:6px;align-items:center;height:9px}
-.page-dots span{
-  width:6px;height:6px;border-radius:50%;
-  background:rgba(255,255,255,.35);
-}
-.page-dots span.active{background:rgba(255,255,255,.9)}
-.search-pill{
-  border:0;
-  display:flex;
-  align-items:center;
-  gap:5px;
-  padding:6px 11px;
-  border-radius:999px;
-  background:rgba(84,84,88,.46);
-  color:rgba(255,255,255,.8);
-  font-size:12px;
-  -webkit-backdrop-filter:blur(20px) saturate(140%);
-  backdrop-filter:blur(20px) saturate(140%);
-}
-.search-pill svg{width:15px;height:15px}
 
-.ios-dock{
-  position:fixed;
-  left:50%;
-  bottom:calc(10px + env(safe-area-inset-bottom));
-  transform:translateX(-50%);
-  width:min(calc(100% - 24px),456px);
-  z-index:25;
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  align-items:center;
-  gap:8px;
-  margin:0;
-  padding:11px 10px;
-  border-radius:30px;
-  background:var(--dock);
-  border:1px solid rgba(255,255,255,.1);
-  -webkit-backdrop-filter:blur(28px) saturate(150%);
-  backdrop-filter:blur(28px) saturate(150%);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.12),
-    0 12px 28px rgba(0,0,0,.22);
-  touch-action:pan-x;
-  overscroll-behavior:contain;
-}
-.dock-app{
-  position:relative;
-  display:grid;
-  place-items:center;
-  min-width:0;
-}
-.dock-button{
-  border:0;
-  background:transparent;
-  padding:0;
-  display:grid;
-  place-items:center;
-}
-.dock-icon-wrap{
-  position:relative;
-  display:block;
-  width:clamp(58px,17vw,70px);
-  height:clamp(58px,17vw,70px);
-}
-.dock-icon{
-  width:100%;height:100%;
-  display:grid;place-items:center;
-  border-radius:22.5%;
-  background:var(--tile-bg);
-  color:var(--tile-ink);
-  box-shadow:
-    inset 0 1px 1px rgba(255,255,255,.28),
-    0 5px 13px rgba(0,0,0,.3);
-  overflow:hidden;
-}
-.dock-icon svg{width:68%;height:68%}
-.dock-icon.brand svg{width:100%;height:100%}
 
 .sheet-backdrop{
   position:fixed;inset:0;z-index:90;
@@ -532,7 +429,7 @@ svg{display:block}
   position:fixed;
   left:50%;
   transform:translateX(-50%);
-  bottom:calc(116px + env(safe-area-inset-bottom));
+  bottom:calc(24px + env(safe-area-inset-bottom));
   z-index:110;
   width:max-content;
   max-width:calc(100% - 36px);
@@ -552,10 +449,6 @@ svg{display:block}
   .app-shell{padding-left:12px;padding-right:12px}
   .tile-grid{gap:13px 4px}
   .app-label{font-size:10.5px}
-  .ios-dock{gap:4px;padding-left:8px;padding-right:8px}
-}
-@media(max-height:720px){
-  .home-controls{bottom:calc(108px + env(safe-area-inset-bottom))}
 }
 @media(min-width:700px){
   body{display:grid;place-items:start center;padding:18px 0}
@@ -567,7 +460,6 @@ svg{display:block}
   }
 }
 @media(prefers-reduced-motion:reduce){
-  .editing .module-icon,
-  .editing .dock-icon{animation:none}
+  .editing .module-icon{animation:none}
   *{scroll-behavior:auto!important}
 }
