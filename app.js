@@ -194,9 +194,34 @@ function onPointerDown(event,element,id,zone){
     id,zone,element,pointer:event.pointerId,
     startX:event.clientX,startY:event.clientY,
     dx:event.clientX-rect.left,dy:event.clientY-rect.top,
-    rect,ghost:null,targetZone:null,targetId:null
+    rect,ghost:null,targetZone:null,targetId:null,
+    hoverElement:null,pendingX:event.clientX,pendingY:event.clientY,raf:0
   };
   element.setPointerCapture?.(event.pointerId);
+}
+
+function scheduleDragFrame(clientX,clientY){
+  if(!drag?.ghost)return;
+  drag.pendingX=clientX;
+  drag.pendingY=clientY;
+  if(drag.raf)return;
+  drag.raf=requestAnimationFrame(()=>{
+    if(!drag?.ghost)return;
+    const x=drag.pendingX-drag.dx;
+    const y=drag.pendingY-drag.dy;
+    drag.ghost.style.transform=`translate3d(${x}px,${y}px,0) scale(1.055)`;
+    drag.raf=0;
+  });
+}
+
+function setDragTarget(element,zone,id){
+  if(!drag)return;
+  if(drag.hoverElement===element&&drag.targetZone===zone&&drag.targetId===id)return;
+  drag.hoverElement?.classList.remove('drop-target');
+  drag.hoverElement=element||null;
+  drag.targetZone=zone||null;
+  drag.targetId=id||null;
+  drag.hoverElement?.classList.add('drop-target');
 }
 
 function onPointerMove(event){
@@ -217,12 +242,10 @@ function onPointerMove(event){
     drag.ghost.style.height=drag.rect.height+'px';
     document.body.appendChild(drag.ghost);
     drag.element.classList.add('dragging');
+    document.body.classList.add('drag-active');
   }
 
-  drag.ghost.style.left=(event.clientX-drag.dx)+'px';
-  drag.ghost.style.top=(event.clientY-drag.dy)+'px';
-
-  document.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));
+  scheduleDragFrame(event.clientX,event.clientY);
 
   const hit=document.elementFromPoint(event.clientX,event.clientY);
   const target=hit?.closest('.app-item:not(.drag-ghost)');
@@ -231,24 +254,16 @@ function onPointerMove(event){
 
   if(target){
     if(target.dataset.id!==drag.id){
-      drag.targetId=target.dataset.id;
-      drag.targetZone=target.dataset.zone;
-      target.classList.add('drop-target');
+      setDragTarget(target,target.dataset.zone,target.dataset.id);
     }else{
-      drag.targetId=null;
-      drag.targetZone=null;
+      setDragTarget(null,null,null);
     }
   }else if(dockHit){
-    drag.targetId=null;
-    drag.targetZone='dock';
-    dock.classList.add('drop-target');
+    setDragTarget(dock,'dock',null);
   }else if(gridHit){
-    drag.targetId=null;
-    drag.targetZone='home';
-    grid.classList.add('drop-target');
+    setDragTarget(grid,'home',null);
   }else{
-    drag.targetId=null;
-    drag.targetZone=null;
+    setDragTarget(null,null,null);
   }
 
   // iPhoneのホーム画面のように、ドラッグ中に縦方向へ勝手にスクロールさせない。
@@ -274,11 +289,13 @@ function onPointerUp(event){
 
 function cancelDrag(){
   if(!drag)return;
-  const {element,pointer,ghost}=drag;
+  const {element,pointer,ghost,raf,hoverElement}=drag;
+  if(raf)cancelAnimationFrame(raf);
   ghost?.remove();
+  hoverElement?.classList.remove('drop-target');
   element.classList.remove('dragging');
   if(element.hasPointerCapture?.(pointer))element.releasePointerCapture(pointer);
-  document.querySelectorAll('.drop-target').forEach(el=>el.classList.remove('drop-target'));
+  document.body.classList.remove('drag-active');
   drag=null;
 }
 
