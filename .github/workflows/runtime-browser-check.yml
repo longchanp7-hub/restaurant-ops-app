@@ -22,11 +22,9 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install playwright@1.55.0 --no-save
           npx playwright install --with-deps chromium
-      - name: Start static server
-        run: |
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/restaurant-ops-server.log 2>&1 &
-          sleep 2
-      - name: Run mobile interaction checks
+      - name: Run mobile interaction checks against production Pages
+        env:
+          TARGET_URL: https://longchanp7-hub.github.io/restaurant-ops-app/
         run: node tests/runtime-check.mjs
       - name: Upload runtime screenshot
         if: always()
