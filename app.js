@@ -16,16 +16,16 @@ const APPS=[
   {id:'facebook',title:'Facebook',desc:'業務用Facebook',icon:'facebook',bg:'#1877F2',ink:'#fff',brand:true,badge:1,zone:'home'},
   {id:'x',title:'X',desc:'業務用X',icon:'x',bg:'#050505',ink:'#fff',brand:true,zone:'home'},
   {id:'tiktok',title:'TikTok',desc:'業務用TikTok',icon:'tiktok',bg:'#050505',ink:'#fff',brand:true,badge:2,zone:'home'},
-  {id:'ai',title:'AIアシスタント',desc:'AIアシスタント',icon:'ai',bg:'linear-gradient(145deg,#7f7cff,#5e5ce6)',ink:'#fff',zone:'dock'},
-  {id:'line',title:'LINE',desc:'業務用LINE',icon:'line',bg:'#06C755',ink:'#fff',brand:true,badge:6,zone:'dock'},
-  {id:'calendar',title:'カレンダー',desc:'予定・行事',icon:'calendar',bg:'#fff',ink:'#111',brand:true,zone:'dock'},
-  {id:'settings',title:'設定',desc:'全体設定',icon:'settings',bg:'linear-gradient(145deg,#f0f0f4,#99999f)',ink:'#fff',brand:true,zone:'dock'}
+  {id:'ai',title:'AIアシスタント',desc:'AIアシスタント',icon:'ai',bg:'linear-gradient(145deg,#7f7cff,#5e5ce6)',ink:'#fff',zone:'home'},
+  {id:'line',title:'LINE',desc:'業務用LINE',icon:'line',bg:'#06C755',ink:'#fff',brand:true,badge:6,zone:'home'},
+  {id:'calendar',title:'カレンダー',desc:'予定・行事',icon:'calendar',bg:'#fff',ink:'#111',brand:true,zone:'home'},
+  {id:'settings',title:'設定',desc:'全体設定',icon:'settings',bg:'linear-gradient(145deg,#f0f0f4,#99999f)',ink:'#fff',brand:true,zone:'home'}
 ];
 
 const DEFAULT_HOME=APPS.filter(a=>a.zone==='home').map(a=>a.id);
 const DEFAULT_DOCK=APPS.filter(a=>a.zone==='dock').map(a=>a.id);
 const ALL_IDS=APPS.map(a=>a.id);
-const MAX_DOCK=4;
+const MAX_DOCK=0;
 
 let storage;
 try{
@@ -35,6 +35,7 @@ try{
 }
 
 let layout=HomeState.loadLayout(storage,ALL_IDS,DEFAULT_HOME,DEFAULT_DOCK,MAX_DOCK);
+HomeState.saveLayout(storage,layout);
 let editing=false;
 let drag=null;
 let longPress=null;
@@ -43,7 +44,6 @@ let suppressUntil=0;
 
 const $=id=>document.getElementById(id);
 const grid=$('tileGrid');
-const dock=$('dockGrid');
 const sheet=$('bottomSheet');
 const sheetBody=$('sheetBody');
 
@@ -109,39 +109,6 @@ function renderHome(){
   });
 }
 
-function renderDock(){
-  dock.innerHTML='';
-  layout.dock.forEach(id=>{
-    const item=byId(id);
-    if(!item)return;
-
-    const wrap=document.createElement('div');
-    wrap.className='dock-app app-item';
-    wrap.dataset.id=id;
-    wrap.dataset.zone='dock';
-    wrap.innerHTML=`
-      <button class="dock-button drag-handle" type="button" aria-label="${item.title}${editing?'：ドラッグで移動':''}">
-        <span class="dock-icon-wrap">${artwork(item,'dock-icon')}${badgeMarkup(item.badge)}</span>
-      </button>
-      <button class="dock-remove" type="button" ${editing?'':'hidden'} aria-label="${item.title}をホームから外す">${icon('minus')}</button>
-    `;
-
-    const handle=wrap.querySelector('.drag-handle');
-    handle.addEventListener('click',()=>{
-      if(Date.now()<suppressUntil)return;
-      if(!editing)openApp(item);
-    });
-    handle.addEventListener('pointerdown',e=>onPointerDown(e,wrap,id,'dock'));
-    wrap.querySelector('.dock-remove').addEventListener('click',()=>{
-      layout=HomeState.hideLayout(layout,id);
-      persist('ホームから非表示にしました');
-      renderAll();
-    });
-
-    dock.appendChild(wrap);
-  });
-}
-
 function renderAll(){
   document.body.classList.toggle('editing',editing);
   $('editBtn').classList.toggle('active',editing);
@@ -150,7 +117,6 @@ function renderAll(){
   $('introCard').hidden=!editing;
   $('addCard').hidden=!editing;
   renderHome();
-  renderDock();
 }
 
 function setEditing(value){
@@ -249,7 +215,6 @@ function onPointerMove(event){
 
   const hit=document.elementFromPoint(event.clientX,event.clientY);
   const target=hit?.closest('.app-item:not(.drag-ghost)');
-  const dockHit=hit?.closest('#dockGrid');
   const gridHit=hit?.closest('#tileGrid');
 
   if(target){
@@ -258,8 +223,6 @@ function onPointerMove(event){
     }else{
       setDragTarget(null,null,null);
     }
-  }else if(dockHit){
-    setDragTarget(dock,'dock',null);
   }else if(gridHit){
     setDragTarget(grid,'home',null);
   }else{
@@ -389,7 +352,7 @@ $('sheetBackdrop').addEventListener('click',closeSheet);
 
 $('resetBtn').addEventListener('click',()=>{
   openSheet('配置をリセット');
-  sheetBody.innerHTML='<p class="sheet-message">ホーム画面とDockを初期配置に戻します。</p><button class="primary-button" id="confirmReset" type="button" style="margin-top:18px">初期配置に戻す</button>';
+  sheetBody.innerHTML='<p class="sheet-message">ホーム画面を初期配置に戻します。</p><button class="primary-button" id="confirmReset" type="button" style="margin-top:18px">初期配置に戻す</button>';
   $('confirmReset').addEventListener('click',()=>{
     layout=HomeState.normalizeLayout(null,ALL_IDS,DEFAULT_HOME,DEFAULT_DOCK,MAX_DOCK);
     persist('初期配置に戻しました');
@@ -400,7 +363,6 @@ $('resetBtn').addEventListener('click',()=>{
 });
 
 $('storeBtn').addEventListener('click',()=>openApp({id:'store',title:'店舗を選択'}));
-$('searchBtn').addEventListener('click',()=>openApp({id:'search',title:'検索'}));
 
 document.addEventListener('keydown',event=>{
   if(sheet.hidden)return;
