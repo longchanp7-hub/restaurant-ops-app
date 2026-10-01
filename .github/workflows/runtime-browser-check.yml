@@ -1,0 +1,37 @@
+name: Runtime browser check
+
+on:
+  push:
+    branches:
+      - test/runtime-check-20261001
+
+permissions:
+  contents: read
+
+jobs:
+  browser-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0 --no-save
+          npx playwright install --with-deps chromium
+      - name: Start static server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/restaurant-ops-server.log 2>&1 &
+          sleep 2
+      - name: Run mobile interaction checks
+        run: node tests/runtime-check.mjs
+      - name: Upload runtime screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-check-mobile
+          path: runtime-check-mobile.png
+          if-no-files-found: ignore
