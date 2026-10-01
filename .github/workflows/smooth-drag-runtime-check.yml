@@ -22,11 +22,9 @@ jobs:
           npm init -y >/dev/null 2>&1
           npm install playwright@1.55.0 --no-save
           npx playwright install --with-deps chromium
-      - name: Start site
-        run: |
-          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/server.log 2>&1 &
-          sleep 2
-      - name: Check drag behavior
+      - name: Check production drag behavior
+        env:
+          TARGET_URL: https://longchanp7-hub.github.io/restaurant-ops-app/
         run: node tests/smooth-drag-check.mjs
       - name: Upload screenshot
         if: always()
