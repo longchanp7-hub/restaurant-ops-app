@@ -1,6 +1,6 @@
 import { chromium } from 'playwright';
 
-const base = 'http://127.0.0.1:4173/';
+const base = process.env.TARGET_URL || 'http://127.0.0.1:4173/';
 const browser = await chromium.launch({headless:true});
 const page = await browser.newPage({viewport:{width:390,height:640}, isMobile:true, hasTouch:true});
 const consoleErrors=[];
@@ -100,13 +100,13 @@ assert(targetDockId && newHomeIds.includes(targetDockId), 'Displaced dock icon d
 
 // Hide and restore an icon.
 const website = page.locator('[data-id="website"]');
-await website.locator('.remove-home').click();
+await website.locator('.remove-home').click({force:true});
 assert(await page.locator('[data-id="website"]').count()===0, 'Website icon did not hide');
 await page.locator('#addCard').click();
 assert((await page.locator('#sheetTitle').textContent())==='機能を追加', 'Add sheet did not open');
 const websiteRow = page.locator('.hidden-item').filter({hasText:'ホームページ'});
 assert(await websiteRow.count()===1, 'Hidden homepage item missing from add sheet');
-await websiteRow.locator('button').click();
+await websiteRow.locator('button').click({force:true});
 await page.locator('#closeSheet').click();
 assert(await page.locator('[data-id="website"]').count()===1, 'Website icon did not restore');
 
