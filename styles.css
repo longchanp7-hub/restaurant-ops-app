@@ -163,6 +163,17 @@ svg{display:block}
   text-align:center;
   touch-action:pan-y;
 }
+.app-item,
+.drag-handle{
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none;
+}
+.module-icon,
+.dock-icon{
+  transform:translateZ(0);
+  backface-visibility:hidden;
+}
 .tile-main{
   position:relative;
   width:100%;
@@ -252,39 +263,61 @@ svg{display:block}
 }
 .editing .tile,
 .editing .dock-app{
-  animation:ios-jiggle .18s infinite alternate ease-in-out;
   touch-action:none;
 }
-.editing .tile:nth-child(2n),
-.editing .dock-app:nth-child(2n){animation-direction:alternate-reverse}
+.editing .tile .module-icon,
+.editing .dock-app .dock-icon{
+  animation:ios-jiggle .26s infinite alternate ease-in-out;
+  transform-origin:50% 50%;
+}
+.editing .tile:nth-child(2n) .module-icon,
+.editing .dock-app:nth-child(2n) .dock-icon{animation-direction:alternate-reverse}
 .editing .drag-handle,
 .editing .ios-dock{touch-action:none}
 .editing .badge{display:none}
 @keyframes ios-jiggle{
-  from{transform:rotate(-1.1deg)}
-  to{transform:rotate(1.1deg)}
+  from{transform:rotate(-.58deg)}
+  to{transform:rotate(.58deg)}
 }
-.dragging{opacity:.25}
+.dragging{
+  opacity:.16;
+}
+.dragging .module-icon,
+.dragging .dock-icon{
+  animation:none!important;
+}
 .drag-ghost{
   position:fixed;
+  left:0;
+  top:0;
   pointer-events:none;
   z-index:80;
-  opacity:.94;
-  transform:scale(1.08) rotate(2deg);
+  opacity:.96;
   margin:0;
-  filter:drop-shadow(0 15px 22px rgba(0,0,0,.5));
+  animation:none!important;
+  transition:none!important;
+  will-change:transform;
+  contain:layout paint style;
+  filter:drop-shadow(0 14px 22px rgba(0,0,0,.38));
+}
+.drag-ghost .module-icon,
+.drag-ghost .dock-icon{
+  animation:none!important;
 }
 .drag-ghost .remove-home,
 .drag-ghost .dock-remove{display:none!important}
 .drop-target .module-icon,
 .drop-target .dock-icon{
-  outline:3px solid rgba(255,255,255,.8);
-  outline-offset:3px;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,.3),
+    0 0 0 3px rgba(255,255,255,.72),
+    0 10px 24px rgba(0,0,0,.24);
 }
 .tile-grid.drop-target,
 .ios-dock.drop-target{
-  outline:2px solid rgba(255,255,255,.55);
-  outline-offset:5px;
+  box-shadow:
+    inset 0 0 0 2px rgba(255,255,255,.42),
+    0 12px 28px rgba(0,0,0,.22);
 }
 
 .empty-state{
@@ -534,6 +567,7 @@ svg{display:block}
   }
 }
 @media(prefers-reduced-motion:reduce){
-  .editing .tile{animation:none}
+  .editing .module-icon,
+  .editing .dock-icon{animation:none}
   *{scroll-behavior:auto!important}
 }
