@@ -1,0 +1,26 @@
+name: No dock production check
+on:
+  push:
+    branches: [test/nodock-production-check-20261001]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.55.0 --no-save
+          npx playwright install --with-deps chromium
+      - run: node tests/nodock-production-check.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nodock-production
+          path: nodock-production.png
+          if-no-files-found: ignore
