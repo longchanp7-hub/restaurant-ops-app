@@ -8,7 +8,7 @@ page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text())});
 page.on('pageerror',e=>pageErrors.push(e.message));
 const assert=(v,m)=>{if(!v)throw new Error(m)};
 
-await page.goto('http://127.0.0.1:4173/',{waitUntil:'networkidle'});
+await page.goto(process.env.TARGET_URL||'http://127.0.0.1:4173/',{waitUntil:'networkidle'});
 await page.evaluate(()=>localStorage.clear());
 await page.reload({waitUntil:'networkidle'});
 assert(await page.locator('#tileGrid .app-item').count()===17,'home icon count mismatch');
