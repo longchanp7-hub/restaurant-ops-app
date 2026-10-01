@@ -72,3 +72,5 @@ assert(pageErrors.length===0,'page errors: '+pageErrors.join(' | '));
 await page.screenshot({path:'smooth-drag-check.png',fullPage:true});
 console.log(JSON.stringify({ok:true,ghost:g1,dockOrder:order,transformSamples:new Set(positions).size,consoleErrors,pageErrors},null,2));
 await browser.close();
+
+// trigger runtime check
