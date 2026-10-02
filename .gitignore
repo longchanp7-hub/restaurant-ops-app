@@ -1,0 +1,10 @@
+node_modules/
+test-results/
+playwright-report/
+dist/
+*.log
+# Business data and downloaded backups must never be published.
+restaurant-ops-*.json
+*-保全データ.json
+*-元データ.txt
+*.csv
