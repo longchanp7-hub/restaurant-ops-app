@@ -1,0 +1,16 @@
+{
+  "name": "店舗運営",
+  "ai": false,
+  "publicUrl": "https://longchanp7-hub.github.io/restaurant-ops-app/",
+  "checks": [
+    {
+      "path": "",
+      "contains": "店舗運営"
+    },
+    {
+      "path": "manifest.webmanifest",
+      "json": true,
+      "key": "name"
+    }
+  ]
+}
