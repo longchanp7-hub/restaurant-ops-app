@@ -106,3 +106,5 @@ npm run test:browser
 ## 公開
 
 mainの更新でGitHub Pagesへデプロイします。公開成果物は `dist/` の許可済みアプリ資産だけです。バックアップ、CSV、テスト画像、ソース管理情報を公開成果物に含めません。PRではデータモデルとブラウザーの検証を実行します。
+
+AIを使わない日次運用と変更方法: [OPERATIONS.md](OPERATIONS.md)
