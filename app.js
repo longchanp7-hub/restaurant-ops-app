@@ -6,18 +6,18 @@ const APPS=[
   {id:'accounting',title:'会計',desc:'会計・経費管理',icon:'accounting',bg:'linear-gradient(145deg,#c15cf0,#9840cb)',ink:'#fff',zone:'home'},
   {id:'tasks',title:'タスク',desc:'やること・業務管理',icon:'tasks',bg:'linear-gradient(145deg,#ffdf32,#ffc400)',ink:'#4a3a00',zone:'home'},
   {id:'reports',title:'レポート',desc:'日報・分析・比較',icon:'reports',bg:'linear-gradient(145deg,#61d4e8,#33b8ce)',ink:'#fff',zone:'home'},
-  {id:'alerts',title:'通知',desc:'重要なお知らせ',icon:'alerts',bg:'linear-gradient(145deg,#ff736e,#ff443b)',ink:'#fff',badge:3,zone:'home'},
-  {id:'booking',title:'予約',desc:'予約・席の管理',icon:'booking',bg:'linear-gradient(145deg,#48dd6c,#19bd51)',ink:'#fff',badge:2,zone:'home'},
+  {id:'alerts',title:'通知',desc:'重要なお知らせ',icon:'alerts',bg:'linear-gradient(145deg,#ff736e,#ff443b)',ink:'#fff',zone:'home'},
+  {id:'booking',title:'予約',desc:'予約・席の管理',icon:'booking',bg:'linear-gradient(145deg,#48dd6c,#19bd51)',ink:'#fff',zone:'home'},
   {id:'customers',title:'顧客',desc:'顧客・来店履歴',icon:'customers',bg:'linear-gradient(145deg,#239bff,#087cf0)',ink:'#fff',zone:'home'},
   {id:'menu',title:'メニュー',desc:'商品・価格・メニュー',icon:'menu',bg:'linear-gradient(145deg,#ffad2e,#ff8212)',ink:'#fff',zone:'home'},
   {id:'help',title:'ヘルプ',desc:'マニュアル・問い合わせ',icon:'help',bg:'linear-gradient(145deg,#a1a1a7,#737378)',ink:'#fff',zone:'home'},
   {id:'website',title:'ホームページ',desc:'公式サイト・Web更新',icon:'website',bg:'linear-gradient(145deg,#56CCF2,#2F80ED)',ink:'#fff',zone:'home'},
-  {id:'instagram',title:'Instagram',desc:'業務用Instagram',icon:'instagram',bg:'radial-gradient(circle at 30% 105%,#fdf497 0 8%,#fdf49700 32%),linear-gradient(135deg,#833AB4 0%,#FD1D1D 52%,#FCB045 100%)',ink:'#fff',brand:true,badge:4,zone:'home'},
-  {id:'facebook',title:'Facebook',desc:'業務用Facebook',icon:'facebook',bg:'#1877F2',ink:'#fff',brand:true,badge:1,zone:'home'},
+  {id:'instagram',title:'Instagram',desc:'業務用Instagram',icon:'instagram',bg:'radial-gradient(circle at 30% 105%,#fdf497 0 8%,#fdf49700 32%),linear-gradient(135deg,#833AB4 0%,#FD1D1D 52%,#FCB045 100%)',ink:'#fff',brand:true,zone:'home'},
+  {id:'facebook',title:'Facebook',desc:'業務用Facebook',icon:'facebook',bg:'#1877F2',ink:'#fff',brand:true,zone:'home'},
   {id:'x',title:'X',desc:'業務用X',icon:'x',bg:'#050505',ink:'#fff',brand:true,zone:'home'},
-  {id:'tiktok',title:'TikTok',desc:'業務用TikTok',icon:'tiktok',bg:'#050505',ink:'#fff',brand:true,badge:2,zone:'home'},
+  {id:'tiktok',title:'TikTok',desc:'業務用TikTok',icon:'tiktok',bg:'#050505',ink:'#fff',brand:true,zone:'home'},
   {id:'ai',title:'AIアシスタント',desc:'AIアシスタント',icon:'ai',bg:'linear-gradient(145deg,#7f7cff,#5e5ce6)',ink:'#fff',zone:'home'},
-  {id:'line',title:'LINE',desc:'業務用LINE',icon:'line',bg:'#06C755',ink:'#fff',brand:true,badge:6,zone:'home'},
+  {id:'line',title:'LINE',desc:'業務用LINE',icon:'line',bg:'#06C755',ink:'#fff',brand:true,zone:'home'},
   {id:'calendar',title:'カレンダー',desc:'予定・行事',icon:'calendar',bg:'#fff',ink:'#111',brand:true,zone:'home'},
   {id:'settings',title:'設定',desc:'全体設定',icon:'settings',bg:'linear-gradient(145deg,#f0f0f4,#99999f)',ink:'#fff',brand:true,zone:'home'}
 ];
@@ -31,15 +31,15 @@ let storage;
 try{
   storage=window.localStorage;
 }catch(e){
-  storage={getItem(){return null;},setItem(){throw new Error('storage unavailable');}};
+  storage={getItem(){throw new Error('storage unavailable');},setItem(){throw new Error('storage unavailable');}};
 }
 
 let layout=HomeState.loadLayout(storage,ALL_IDS,DEFAULT_HOME,DEFAULT_DOCK,MAX_DOCK);
-HomeState.saveLayout(storage,layout);
 let editing=false;
 let drag=null;
 let longPress=null;
 let restoreFocus=null;
+let restoreAppId=null;
 let suppressUntil=0;
 
 const $=id=>document.getElementById(id);
@@ -87,7 +87,7 @@ function renderHome(){
     tile.dataset.zone='home';
     tile.innerHTML=`
       <button class="tile-main drag-handle" type="button" aria-label="${item.title}${editing?'：ドラッグで移動':''}">
-        <span class="icon-wrap">${artwork(item,'module-icon')}${badgeMarkup(item.badge)}</span>
+        <span class="icon-wrap">${artwork(item,'module-icon')}${badgeMarkup(ops.badge(item.id))}</span>
         <span class="app-label">${item.title}</span>
       </button>
       <button class="remove-home" type="button" ${editing?'':'hidden'} aria-label="${item.title}をホームから外す">${icon('minus')}</button>
@@ -110,6 +110,7 @@ function renderHome(){
 }
 
 function renderAll(){
+  document.querySelector('#storeBtn strong').textContent=ops.data.settings.name||'店舗設定';
   document.body.classList.toggle('editing',editing);
   $('editBtn').classList.toggle('active',editing);
   $('editBtn').setAttribute('aria-pressed',String(editing));
@@ -270,29 +271,31 @@ window.addEventListener('blur',()=>{clearLongPress();cancelDrag();});
 function openSheet(title){
   clearLongPress();
   cancelDrag();
-  restoreFocus=document.activeElement;
+  if(sheet.hidden){restoreFocus=document.activeElement;restoreAppId=restoreFocus?.closest('.tile')?.dataset.id||null;}
   $('sheetTitle').textContent=title;
   sheetBody.replaceChildren();
+  sheetBody.classList.remove('ops-content');
+  sheet.classList.remove('ops-sheet');
   sheet.hidden=false;
   $('sheetBackdrop').hidden=false;
   document.body.style.overflow='hidden';
+  document.querySelector('.app-shell').inert=true;
+  requestAnimationFrame(()=>{sheet.scrollTop=0;});
 }
 
 function closeSheet(){
+  if(!ops.canLeave())return;
+  ops.close();
   sheet.hidden=true;
   $('sheetBackdrop').hidden=true;
   document.body.style.overflow='';
+  document.querySelector('.app-shell').inert=false;
   if(restoreFocus?.isConnected)restoreFocus.focus();
+  else if(restoreAppId)document.querySelector(`[data-id="${restoreAppId}"] .tile-main`)?.focus();
 }
 
 function openApp(item){
-  if(item.id==='settings')return showSettings();
-  openSheet(item.title);
-  const p=document.createElement('p');
-  p.className='sheet-message';
-  p.textContent='現在はホーム画面の見た目と操作感を優先して作り込んでいます。この機能の中身や外部サービスとの接続方法は次の段階で決めます。';
-  sheetBody.appendChild(p);
-  $('closeSheet').focus();
+  ops.open(item.id);
 }
 
 function renderHidden(){
@@ -327,20 +330,6 @@ function openAddSheet(){
   $('closeSheet').focus();
 }
 
-function showSettings(){
-  openSheet('設定');
-  sheetBody.innerHTML=
-    '<p class="sheet-message">見た目と操作感を先に整えている段階です。各機能やSNS連携は後で設定します。</p>'+
-    '<button class="settings-link" id="customize" type="button">ホーム画面を編集 <span>›</span></button>'+
-    '<div class="settings-link">アプリアイコン <span>A案</span></div>';
-  $('customize').addEventListener('click',()=>{
-    closeSheet();
-    setEditing(true);
-    $('editBtn').focus();
-  });
-  $('closeSheet').focus();
-}
-
 $('editBtn').addEventListener('click',()=>setEditing(!editing));
 $('addCard').addEventListener('click',()=>{
   openSheet('機能を追加');
@@ -372,7 +361,7 @@ document.addEventListener('keydown',event=>{
     return;
   }
   if(event.key==='Tab'){
-    const all=[...sheet.querySelectorAll('button:not(:disabled),a[href],[tabindex="0"]')];
+    const all=[...sheet.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]')].filter(el=>!el.hidden&&el.getClientRects().length);
     if(!all.length)return;
     const first=all[0],last=all[all.length-1];
     if(event.shiftKey&&document.activeElement===first){
@@ -385,4 +374,6 @@ document.addEventListener('keydown',event=>{
   }
 });
 
+const ops=OpsUI.init({storage,body:sheetBody,sheet,openSheet,notify:showToast,onChange:renderAll,onCustomize:()=>{closeSheet();setEditing(true);$('editBtn').focus();}});
 renderAll();
+if(ops.error)showToast('保存データの読み込みに失敗しました。設定を確認してください。');

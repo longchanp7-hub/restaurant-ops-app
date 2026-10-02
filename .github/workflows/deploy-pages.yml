@@ -23,6 +23,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate business data and home behavior
+        run: node --test tests/*.test.cjs
+      - name: Build public assets only
+        run: node scripts/build-site.cjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
@@ -30,7 +37,7 @@ jobs:
       - name: Upload static site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
