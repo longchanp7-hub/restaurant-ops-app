@@ -8,7 +8,7 @@ function storage(seed={}){
 }
 function setup(){const disk=storage();return {disk,store:M.createStore(disk)};}
 function add(store,type,values={}){store.upsert(type,{...M.defaults(M.schemas[type].fields),...values});return store.data.entities[type].at(-1);}
-function sale(store,values={}){return add(store,'sales',{name:'食事',date:'2026-10-03',guests:2,lines:[{menuId:'',name:'定食',quantity:2,price:1100}],...values});}
+function sale(store,values={}){const v={name:'食事',date:'2026-10-03',guests:2,lines:[{menuId:'',name:'定食',quantity:2,price:1100}],...values};v.lines=v.lines.map(l=>({unitCost:null,...l}));return add(store,'sales',v);}
 function staff(store){return add(store,'staff',{name:'スタッフ',wage:1200});}
 function stock(store,values={}){return add(store,'stock',{name:'米',unit:'kg',openingDate:'2026-10-01',opening:10,minimum:2,...values});}
 function movement(store,item,values={}){return add(store,'movements',{stockId:item.id,date:'2026-10-03',kind:'出庫',quantity:1,...values});}
@@ -72,7 +72,7 @@ test('restore cannot overwrite changes after preview, invalid data or failed saf
 test('strict backup validation rejects truncation, foreign format, unsupported version and missing or duplicate references',()=>{
   const {store}=setup();sale(store);const good=JSON.parse(store.backup());
   assert.throws(()=>M.parseBackup('{'));
-  for(const change of [b=>{b.format='other';},b=>{b.version=2;},b=>{b.data.entities.sales[0].customerId='missing';},b=>{b.data.entities.sales.push({...b.data.entities.sales[0]});},b=>{delete b.data.entities.menu;},b=>{b.data.entities.sales[0].unexpected=true;}]){const bad=M.clone(good);change(bad);assert.throws(()=>M.parseBackup(JSON.stringify(bad)));}
+  for(const change of [b=>{b.format='other';},b=>{b.version=99;},b=>{b.data.entities.sales[0].customerId='missing';},b=>{b.data.entities.sales.push({...b.data.entities.sales[0]});},b=>{delete b.data.entities.menu;},b=>{b.data.entities.sales[0].unexpected=true;}]){const bad=M.clone(good);change(bad);assert.throws(()=>M.parseBackup(JSON.stringify(bad)));}
 });
 test('dates, times, enums, numeric types and precision are validated',()=>{
   const {store}=setup();for(const date of ['2026-02-29','2026-13-01','2026-04-31','1999-12-31','2101-01-01'])assert.throws(()=>sale(store,{date}));

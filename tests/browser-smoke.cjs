@@ -11,7 +11,7 @@ const evidence=path.resolve(process.env.EVIDENCE_DIR||'test-results');
   await fs.mkdir(evidence,{recursive:true});
   const server=createServer();await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const url=process.env.APP_URL||'http://127.0.0.1:'+server.address().port;
-  let browser,page;const errors=[],checks=[];
+  let browser,page;const errors=[],checks=[],externalRequests=[];
   const check=(name)=>{checks.push(name);console.log('PASS '+name);};
   try{
     browser=await chromium.launch({headless:true,...(process.env.BROWSER_CHANNEL?{channel:process.env.BROWSER_CHANNEL}:{})});
@@ -20,6 +20,7 @@ const evidence=path.resolve(process.env.EVIDENCE_DIR||'test-results');
     const layout={home:['menu',...ids.filter(x=>!['menu','facebook'].includes(x))],dock:[],hidden:['facebook']};
     await context.addInitScript(value=>{if(!localStorage.getItem('restaurantOpsHome.v3'))localStorage.setItem('restaurantOpsHome.v3',JSON.stringify(value));},layout);
     page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));page.on('console',msg=>{if(msg.type()==='error'&&!msg.text().includes('favicon'))errors.push(msg.text());});
+    page.on('request',req=>{if(/^https?:/.test(req.url())&&new URL(req.url()).origin!==new URL(url).origin)externalRequests.push(req.url());});
     page.on('dialog',dialog=>dialog.dismiss());
     await page.goto(url);await page.locator('[data-id=sales]').waitFor();
     const visibleCount=await page.locator('.tile').count();assert.equal(visibleCount,20);assert.equal(await page.locator('.badge').count(),0);
@@ -84,8 +85,8 @@ const evidence=path.resolve(process.env.EVIDENCE_DIR||'test-results');
     // Restore the hidden Facebook icon through the established home customization.
     await click('編集');await click('機能を追加');await page.locator('.hidden-item').filter({hasText:'Facebook'}).getByRole('button',{name:'追加',exact:true}).click();await close();await click('完了');
     for(const channel of M.CHANNELS){
-      await open(channel);assert.match(await page.locator('#sheetBody').textContent(),/未連携/);
-      await click('接続先を設定');await fill('url','https://example.com/'+channel);await click('保存');await page.getByRole('link',{name:'登録した接続先を開く'}).waitFor();
+      await open(channel);assert.match(await page.locator('#sheetBody').textContent(),/自動連携なし/);
+      await click('外部ページのURLを設定');await fill('url','https://example.com/'+channel);await click('保存');await page.getByRole('link',{name:'登録した接続先を開く'}).waitFor();
       assert.equal(await page.getByRole('link',{name:'登録した接続先を開く'}).getAttribute('rel'),'noopener noreferrer');
       await click('下書きを追加');await fill('name',channel+'テスト');await fill('body','<img src=x onerror=alert(1)> テスト本文');await saved('drafts',M.CHANNELS.indexOf(channel)+1);
     }
@@ -105,6 +106,15 @@ const evidence=path.resolve(process.env.EVIDENCE_DIR||'test-results');
     await page.evaluate(()=>{window.originalSetItem=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(k==='restaurantOpsData.v1')throw new DOMException('full','QuotaExceededError');return window.originalSetItem.call(this,k,v);};});
     await click('保存');await page.locator('.ops-error').waitFor({state:'visible'});assert.equal(await page.locator('[name=name]').inputValue(),'保存失敗の入力');assert.equal(await page.evaluate(()=>localStorage.getItem('restaurantOpsData.v1')),beforeFailure);
     await page.evaluate(()=>{Storage.prototype.setItem=window.originalSetItem;});await close();check('quota failure keeps input and durable data');
+
+    await open('menu');await click('原価計算');await click('材料・仕入価格');await click('材料を追加');await select('stockId','テスト米');await fill('name','原価テスト米');await fill('packPrice',3000);await fill('packQuantity',5);await select('packUnit','kg');await saved('ingredients',1);
+    await open('menu');await click('原価計算');await click('原価計算を追加');await select('menuId','テスト定食');await fill('servings',4);await select('status','採用');await page.getByLabel('登録材料',{exact:true}).selectOption({label:'原価テスト米'});await page.getByLabel('明細の使用量',{exact:true}).fill('500');await page.getByLabel('明細の使用量単位',{exact:true}).selectOption('g');
+    assert.match(await page.locator('.ops-cost-result').textContent(),/75.00円/);await page.screenshot({path:path.join(evidence,'04-costing-mobile.png')});await saved('recipes',1);
+    await open('stock');await click('材料・仕入価格');await click('詳細・編集');await fill('packPrice',6000);await click('保存');await page.waitForFunction(()=>JSON.parse(localStorage.getItem('restaurantOpsData.v1')).entities.ingredients[0].packPrice===6000);
+    await open('menu');await click('原価計算');assert.match(await page.locator('.ops-records').textContent(),/75.00円/);
+    await open('sales');await click('売上を追加');await page.getByLabel('登録メニュー',{exact:true}).selectOption({label:'テスト定食'});assert.equal(await page.getByLabel('明細の1点原価',{exact:true}).inputValue(),'75');await saved('sales',2);
+    await page.reload();await open('reports');assert.match(await page.locator('#sheetBody').textContent(),/原価未登録を含む伝票 1件/);assert.match(await page.locator('#sheetBody').textContent(),/75.00円/);
+    await open('settings');const costDownloadPromise=page.waitForEvent('download');await click('JSONバックアップを保存');const costDownload=await costDownloadPromise;const costBackupPath=path.join(evidence,'cost-backup-test.json');await costDownload.saveAs(costBackupPath);const costBackup=M.parseBackup(await fs.readFile(costBackupPath,'utf8'));assert.equal(costBackup.data.entities.recipes[0].lines[0].packPrice,3000);await page.getByLabel('バックアップJSONを選択').setInputFiles(costBackupPath);await page.getByText('復元内容の確認',{exact:true}).waitFor();await page.getByText('現在の業務データを、この内容に置き換える',{exact:true}).click();await click('確認したバックアップを復元');await page.waitForFunction(()=>!document.querySelector('#sheetBody input[type=checkbox]'));assert.equal((await state()).entities.sales.at(-1).lines[0].unitCost,75);check('ingredient purchase units, recipe costing, immutable prices, sale cost snapshots and backup restore');
 
     // A second isolated tab on the same origin proves stale writes cannot replace newer data.
     const other=await context.newPage();await other.goto(url);await open('tasks');await click('タスクを追加');await fill('name','競合する入力');
@@ -130,7 +140,7 @@ const evidence=path.resolve(process.env.EVIDENCE_DIR||'test-results');
     await page.getByLabel('バックアップJSONを選択').setInputFiles(backupPath);await page.getByText('復元内容の確認',{exact:true}).waitFor();await page.getByText('現在の業務データを、この内容に置き換える',{exact:true}).click();await click('確認したバックアップを復元');await page.waitForFunction(()=>localStorage.getItem('restaurantOpsData.v1')!=='{bad');assert.equal(await page.evaluate(()=>localStorage.getItem('restaurantOpsData.v1.beforeRestore')),'{bad');
     assert.ok(goodRaw);check('corrupt startup is protected and can recover through explicit restore');
 
-    assert.deepEqual(errors,[]);check('no JavaScript or console errors');
+    assert.deepEqual(errors,[]);assert.deepEqual(externalRequests,[]);check('no JavaScript or console errors and no external API requests');
     await fs.writeFile(path.join(evidence,'browser-results.json'),JSON.stringify({url,checks,errors,completedAt:new Date().toISOString()},null,2));
     console.log('Browser checks complete: '+checks.length);
   }catch(error){if(page)await page.screenshot({path:path.join(evidence,'failure.png')}).catch(()=>{});throw error;}
