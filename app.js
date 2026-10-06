@@ -1,3 +1,4 @@
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const APPS=[
   {id:'sales',title:'売上',desc:'売上・利益・客単価',icon:'sales',bg:'linear-gradient(145deg,#4fe26a,#10b84a)',ink:'#fff',zone:'home'},
   {id:'shift',title:'シフト',desc:'シフト・勤怠管理',icon:'shift',bg:'linear-gradient(145deg,#ffb449,#ff941a)',ink:'#fff',zone:'home'},
@@ -86,11 +87,11 @@ function renderHome(){
     tile.dataset.id=id;
     tile.dataset.zone='home';
     tile.innerHTML=`
-      <button class="tile-main drag-handle" type="button" aria-label="${item.title}${editing?'：ドラッグで移動':''}">
+      <button class="tile-main drag-handle" type="button" aria-label="${esc(item.title)}${editing?'：ドラッグで移動':''}">
         <span class="icon-wrap">${artwork(item,'module-icon')}${badgeMarkup(ops.badge(item.id))}</span>
-        <span class="app-label">${item.title}</span>
+        <span class="app-label">${esc(item.title)}</span>
       </button>
-      <button class="remove-home" type="button" ${editing?'':'hidden'} aria-label="${item.title}をホームから外す">${icon('minus')}</button>
+      <button class="remove-home" type="button" ${editing?'':'hidden'} aria-label="${esc(item.title)}をホームから外す">${icon('minus')}</button>
     `;
 
     const handle=tile.querySelector('.drag-handle');
@@ -310,7 +311,7 @@ function renderHidden(){
       if(!item)return;
       const row=document.createElement('div');
       row.className='hidden-item';
-      row.innerHTML=`${artwork(item,'module-icon')}<div class="copy"><strong>${item.title}</strong><p>${item.desc}</p></div><button type="button">追加</button>`;
+      row.innerHTML=`${artwork(item,'module-icon')}<div class="copy"><strong>${esc(item.title)}</strong><p>${esc(item.desc)}</p></div><button type="button">追加</button>`;
       row.querySelector('button').addEventListener('click',()=>{
         layout=HomeState.restoreLayout(layout,id);
         persist('ホームに追加しました');
