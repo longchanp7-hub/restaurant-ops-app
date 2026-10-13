@@ -76,7 +76,13 @@
   function shiftRange(s){const start=Date.parse(s.date+'T'+s.start+':00Z');let end=Date.parse(s.date+'T'+s.end+':00Z');if(s.overnight)end+=86400000;return [start,end];}
   function shiftMinutes(s){const [a,b]=shiftRange(s);return (b-a)/60000-s.breakMinutes;}
   function delta(m){return ['出庫','廃棄'].includes(m.kind)?-m.quantity:m.quantity;}
-  function stockQuantity(data,stockId){const item=data.entities.stock.find(x=>x.id===stockId);return Math.round((item.opening+data.entities.movements.filter(m=>m.stockId===stockId&&m.status==='有効').reduce((n,m)=>n+delta(m),0))*1000)/1000;}
+  function stockQuantity(data,stockId,asOf=today()){
+    const item=data.entities.stock.find(x=>x.id===stockId);
+    if(!item)fail('在庫品が見つかりません。');
+    if(asOf<item.openingDate)return 0;
+    const movements=data.entities.movements.filter(m=>m.stockId===stockId&&m.status==='有効'&&m.date<=asOf);
+    return Math.round((item.opening+movements.reduce((n,m)=>n+delta(m),0))*1000)/1000;
+  }
   function validate(data){
     exactKeys(data,['version','revision','updatedAt','settings','entities','connections','acknowledged'],'データ');
     if(data.version!==VERSION)fail('このデータのバージョンには対応していません。');
@@ -216,7 +222,7 @@
   function alerts(data,date=today()){
     const out=[];
     const add=(key,title,detail,target)=>out.push({key,title,detail,target,read:data.acknowledged.includes(key)});
-    for(const s of data.entities.stock.filter(x=>x.status==='管理中')){const q=stockQuantity(data,s.id);if(q<=s.minimum)add('stock:'+s.id+':'+q,s.name+'の在庫が発注目安以下',q+' '+s.unit+' / 目安 '+s.minimum,'stock');}
+    for(const s of data.entities.stock.filter(x=>x.status==='管理中'&&x.openingDate<=date)){const q=stockQuantity(data,s.id,date);if(q<=s.minimum)add('stock:'+s.id+':'+q,s.name+'の在庫が発注目安以下',q+' '+s.unit+' / 目安 '+s.minimum,'stock');}
     for(const t of data.entities.tasks.filter(t=>['未着手','進行中'].includes(t.status)&&t.date<=date))add('task:'+t.id+':'+t.updatedAt,t.name,t.date+(t.date<date?' 期限超過':' 本日期限'),'tasks');
     for(const b of data.entities.booking.filter(b=>b.status==='予約'&&b.date===date))add('booking:'+b.id+':'+b.updatedAt,b.name+'様の予約',b.start+' / '+b.guests+'名','booking');
     return out;

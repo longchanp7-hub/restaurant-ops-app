@@ -86,6 +86,19 @@ test('stock ledger handles decimals, waste, correction and rejects negative chro
   movement(store,item,{kind:'入庫',quantity:3,date:'2026-10-05'});
   assert.throws(()=>movement(store,item,{kind:'出庫',quantity:2,date:'2026-10-04'}),/負数/);
 });
+test('future-dated stock movements affect only their dates, not current stock or early alerts',()=>{
+  const {store}=setup();
+  const item=stock(store,{opening:10,minimum:5});
+  movement(store,item,{date:'2026-11-01',kind:'出庫',quantity:7});
+  assert.equal(M.stockQuantity(store.data,item.id,'2026-10-13'),10);
+  assert.equal(M.stockQuantity(store.data,item.id,'2026-11-01'),3);
+  assert.equal(M.alerts(store.data,'2026-10-13').length,0);
+  assert.equal(M.alerts(store.data,'2026-11-01').length,1);
+  const later=stock(store,{name:'翌月開始の在庫',openingDate:'2026-12-01',opening:1,minimum:2});
+  assert.equal(M.stockQuantity(store.data,later.id,'2026-10-13'),0);
+  assert.equal(M.alerts(store.data,'2026-10-13').length,0);
+  assert.equal(M.alerts(store.data,'2026-12-01').length,2);
+});
 test('voiding an inbound movement cannot make later stock negative',()=>{
   const {store}=setup();const item=stock(store,{opening:0});const incoming=movement(store,item,{kind:'入庫',quantity:2,date:'2026-10-02'});movement(store,item,{quantity:2});
   const {id,createdAt,updatedAt,...values}=incoming;assert.throws(()=>store.upsert('movements',{...values,status:'取消'},id),/負数/);assert.equal(M.stockQuantity(store.data,item.id),0);
