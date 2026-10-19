@@ -27,7 +27,7 @@ const evidence=path.resolve(process.env.EVIDENCE_DIR||'test-results');
     assert.equal(await page.locator('.tile').first().getAttribute('data-id'),'menu');
     assert.deepEqual(JSON.parse(await page.evaluate(()=>localStorage.getItem('restaurantOpsHome.v3'))),layout);
     assert.equal(await page.locator('.tile-grid').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),4);
-    assert.match(await page.locator('#homeClock').innerText(),/^\\d{2}:\\d{2}$/);
+    assert.match(await page.locator('#homeClock').innerText(),/^[0-9]{2}:[0-9]{2}$/);
     assert.ok((await page.locator('#homeDate').innerText()).length>0);
     assert.match(await page.locator('.module-icon').first().evaluate(n=>getComputedStyle(n,'::before').backgroundImage),/gradient/);
     await page.screenshot({path:path.join(evidence,'01-home-mobile.png')});check('existing four-column home, hidden icon and zero fake badges');
