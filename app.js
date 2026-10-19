@@ -48,6 +48,23 @@ const grid=$('tileGrid');
 const sheet=$('bottomSheet');
 const sheetBody=$('sheetBody');
 
+/* Local device time, refreshed on resume so a sleeping PWA never shows stale time. */
+function refreshHomeClock(){
+  const now=new Date();
+  $('homeClock').textContent=new Intl.DateTimeFormat('ja-JP',{
+    hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+  }).format(now);
+  $('homeDate').textContent=new Intl.DateTimeFormat('ja-JP',{
+    month:'numeric',day:'numeric',weekday:'short'
+  }).format(now);
+}
+refreshHomeClock();
+setInterval(refreshHomeClock,30000);
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden)refreshHomeClock();
+});
+window.addEventListener('focus',refreshHomeClock);
+
 document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
 
 const byId=id=>APPS.find(a=>a.id===id);

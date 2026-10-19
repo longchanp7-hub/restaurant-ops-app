@@ -14,13 +14,18 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="app-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="app-icon-192.png">
-<link rel="stylesheet" href="styles.css?v=20261001-nodock1">
+<link rel="stylesheet" href="styles.css?v=20261019-iosglass1">
 <link rel="stylesheet" href="ops.css?v=20261003-personal1">
 </head>
 <body>
 <div class="wallpaper" aria-hidden="true"></div>
 
 <main class="app-shell">
+  <div class="home-status" aria-label="現在の日時">
+    <time class="home-clock" id="homeClock" aria-label="現在の時刻">--:--</time>
+    <span class="home-date" id="homeDate" aria-hidden="true"></span>
+  </div>
+
   <header class="ios-header">
     <button class="store-pill" id="storeBtn" type="button">
       <img src="app-icon.svg" alt="" width="28" height="28">
@@ -69,6 +74,6 @@
 <script src="home-state.js?v=20260925-dockfix1"></script>
 <script src="ops-model.js?v=20261003-personal1"></script>
 <script src="ops-ui.js?v=20261003-personal1"></script>
-<script src="app.js?v=20261003-personal1"></script>
+<script src="app.js?v=20261019-iosglass1"></script>
 </body>
 </html>
