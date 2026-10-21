@@ -42,7 +42,8 @@ function xIcon(){
   return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M15 13h11l10 14 13-14h6L39 31l17 20H45L34 36 20 51h-6l17-19L15 13Zm9 5 23 28h4L28 18h-4Z" fill="#fff"/></svg>';
 }
 function tiktokIcon(){
-  return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M37 12v23c0 10-7 17-17 17S5 45 5 36c0-8 6-15 15-16v9c-4 1-7 3-7 7 0 4 3 7 7 7s8-3 8-8V12h9Z" fill="#25F4EE" transform="translate(-2 1)"/><path d="M37 12c1 7 6 12 14 14v9c-6-1-10-3-14-7v7c0 10-7 17-17 17S5 45 5 36c0-8 6-15 15-16v9c-4 1-7 3-7 7 0 4 3 7 7 7s8-3 8-8V12h10Z" fill="#FE2C55" transform="translate(2 -1)"/><path d="M37 12c1 7 6 12 14 14v7c-6-1-10-3-14-7v9c0 10-7 17-17 17S5 45 5 36c0-8 6-15 15-16v9c-4 1-7 3-7 7 0 4 3 7 7 7s8-3 8-8V12h10Z" fill="#fff"/></svg>';
+  const note='M34 9h9c1 8 5 13 13 14v9c-5-1-9-3-13-6v12c0 11-8 19-19 19S6 52 6 41s8-19 19-19v9c-6 0-10 4-10 10s4 10 10 10 9-4 9-10V9Z';
+  return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="'+note+'" fill="#25F4EE" transform="translate(-1.4 1.4)"/><path d="'+note+'" fill="#FE2C55" transform="translate(1.4 -1.4)"/><path d="'+note+'" fill="#fff"/></svg>';
 }
 function lineIcon(){
   return '<svg viewBox="0 0 64 64" aria-hidden="true"><path d="M56 29c0-12-11-22-25-22S6 17 6 29c0 11 9 20 21 22 .8.2 2 .6 2.3 1.4.3.7.2 1.7.1 2.4l-.8 4.3c-.3 1.2-1 4.4 4 2.3 5-2 13-7.8 18-13.4 3.6-4 5.4-11 5.4-19Z" fill="#fff"/><text x="18" y="35" fill="#06C755" font-size="12" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="800">LINE</text></svg>';
